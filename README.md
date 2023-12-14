@@ -26,10 +26,10 @@ A user event memory for server and clients. Online users will receive events and
 
 
   const server = await require('hyperdown')({
-    uniqueKeyPair:          sk,
-    folderName:             'topic',
-    testFolder:             'server',
-    isServer:               true,
+    uniqueKeyPair: sk,
+    folderName: 'topic',
+    testFolder: 'server',
+    isServer: true,
     onClientConsumedEvents:
     function(remotePublicKey, eventsArray) {
       // do something ...
@@ -43,9 +43,9 @@ A user event memory for server and clients. Online users will receive events and
 
 
   const client = await require('hyperdown')({
-    uniqueKeyPair:          ck,
-    folderName:             'topic',
-    testFolder:             'client',
+    uniqueKeyPair: ck,
+    folderName: 'topic',
+    testFolder: 'client',
     eventHandler:
     function(id, data, cb) {
       // do something ...
