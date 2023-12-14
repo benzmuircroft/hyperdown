@@ -39,6 +39,8 @@ npm install "github:benzmuircroft/hyperdown"
     }
   });
 
+  // an online user
+
   const ck1 = new Keychain().get();
 
   const onlineClient = await require('hyperdown')({
