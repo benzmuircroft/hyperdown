@@ -9,7 +9,7 @@ async function hyperdown(options) {
   const ProtomuxRPC = require('protomux-rpc');
   const Keychain = (await import('keypear')).default;
   const b4a = require('b4a');
-  const goodbye = await import('graceful-goodbye');
+  const goodbye = (await import('graceful-goodbye')).default;
 
   let base, swarm, keyPair;
 
