@@ -39,10 +39,10 @@ npm install "github:benzmuircroft/hyperdown"
     }
   });
 
-  const ck = new Keychain().get();
+  const ck1 = new Keychain().get();
 
-  const client = await require('hyperdown')({
-    uniqueKeyPair: ck,
+  const onlineClient = await require('hyperdown')({
+    uniqueKeyPair: ck1,
     folderName: 'topic',
     testFolder: 'client',
     eventHandler:
@@ -53,7 +53,25 @@ npm install "github:benzmuircroft/hyperdown"
     }
   });
 
-  await server.addEvent(ck.publicKey, JSON.stringify({ prize: 500, game: 'robots' })); // give a client an event
+  await server.addEvent(ck1.publicKey, JSON.stringify({ prize: 500, game: 'robots' })); // give a online client an event
+
+  // an offline user
+
+  const ck2 = new Keychain().get();
+
+  await server.addEvent(ck2.publicKey, JSON.stringify({ prize: -500, game: 'robots' })); // give a offline client an event
+
+  const offlineClient = await require('hyperdown')({ // they come back later ...
+    uniqueKeyPair: ck2,
+    folderName: 'topic',
+    testFolder: 'client',
+    eventHandler:
+    function(id, data, cb) {
+      // do something ...
+      console.log('client: event from server', id, data, cb);
+      cb(id, true);
+    }
+  });
 
 })();
 ```
