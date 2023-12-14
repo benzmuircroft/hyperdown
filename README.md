@@ -25,7 +25,7 @@ An user event memory for server and clients. Online users will receive events an
 
 
 
-  const server = await require('../index.js')({
+  const server = await require('hyperdown')({
     uniqueKeyPair:          sk,
     folderName:             'topic',
     testFolder:             'server',
@@ -42,7 +42,7 @@ An user event memory for server and clients. Online users will receive events an
   const ck = new Keychain().get();
 
 
-  const client = await require('../index.js')({
+  const client = await require('hyperdown')({
     uniqueKeyPair:          ck,
     folderName:             'topic',
     testFolder:             'client',
