@@ -1,0 +1,35 @@
+{
+  "name": "hyperdown",
+  "version": "0.0.1",
+  "description": "An user event memory for server and clients. Online users will receive events and handle them normally. Offline users will have there events stored and replicated for later retrieval and handling.",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/benzmuircroft/hyperdown"
+  },
+  "dependencies": {
+    "autobase": "github:holepunchto/autobase#v1.0.0-alpha.9",
+    "hyperdbee": "github:benzmuircroft/hyperdbee#legacy",
+    "corestore": "6.15.13",
+    "hyperswarm": "4.7.13",
+    "protomux-rpc": "1.5.1",
+    "keypear": "1.2.0",
+    "b4a": "1.6.4",
+    "graceful-goodbye": "1.2.1",
+    "hyper-sdk": "4.2.4",
+    "@lejeunerenard/autobase-manager": "github:lejeunerenard/autobase-manager#1.1.0"
+  },
+  "keywords": [
+    "local-first",
+    "offline-first",
+    "distributed",
+    "p2p",
+    "hypercore",
+    "corestore",
+    "hyperswarm",
+    "database",
+    "autobase"
+  ],
+  "author": "Benz Muircroft",
+  "license": "MIT"
+}
