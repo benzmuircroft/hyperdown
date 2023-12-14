@@ -46,7 +46,7 @@ npm install "github:benzmuircroft/hyperdown"
   const onlineClient = await require('hyperdown')({
     uniqueKeyPair: kp1,
     folderName: 'topic',
-    testFolder: 'client',
+    testFolder: 'onlineClient',
     eventHandler:
     function(id, data, cb) {
       // do something ...
@@ -66,7 +66,7 @@ npm install "github:benzmuircroft/hyperdown"
   const offlineClient = await require('hyperdown')({ // they come back later ...
     uniqueKeyPair: kp2,
     folderName: 'topic',
-    testFolder: 'client',
+    testFolder: 'offlineClient',
     eventHandler:
     function(id, data, cb) {
       // do something ...
