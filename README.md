@@ -13,7 +13,7 @@ An user event memory for server and clients. Online users will receive events an
 }
 ```
 
-## Useage
+## Usage
 ```js
 ;(async function() {
 
