@@ -140,7 +140,6 @@ async function hyperdown(options) {
     goodbye(() => swarm.destroy());
     await swarm.join(b4a.alloc(32).fill(options.folderName), { server: true, client: true });
     await swarm.flush();
-
   }
   else { // ---------------------------------------------------------------- client
     this.eventHandler = options.eventHandler;
