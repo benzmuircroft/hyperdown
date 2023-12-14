@@ -19,7 +19,7 @@ npm install "github:benzmuircroft/hyperdown"
 }
 ```
 
-## Usage
+## Usage / test
 ```js
 ;(async function() {
 
