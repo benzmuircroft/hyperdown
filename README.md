@@ -30,7 +30,7 @@ npm install "github:benzmuircroft/hyperdown"
   const server = await require('hyperdown')({
     uniqueKeyPair: kp0,
     folderName: 'topic',
-    testFolder: 'server',
+    testFolder: 'server', // only needed because we are testing in one script
     isServer: true,
     onClientConsumedEvents:
     function(remotePublicKey, eventsArray) {
@@ -46,7 +46,7 @@ npm install "github:benzmuircroft/hyperdown"
   const onlineClient = await require('hyperdown')({
     uniqueKeyPair: kp1,
     folderName: 'topic',
-    testFolder: 'onlineClient',
+    testFolder: 'onlineClient', // only needed because we are testing in one script
     eventHandler:
     function(id, data, cb) {
       // do something ...
@@ -66,7 +66,7 @@ npm install "github:benzmuircroft/hyperdown"
   const offlineClient = await require('hyperdown')({ // they come back later ...
     uniqueKeyPair: kp2,
     folderName: 'topic',
-    testFolder: 'offlineClient',
+    testFolder: 'offlineClient', // only needed because we are testing in one script
     eventHandler:
     function(id, data, cb) {
       // do something ...
