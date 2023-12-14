@@ -24,7 +24,7 @@ npm install "github:benzmuircroft/hyperdown"
 ;(async function() {
 
 
-  const Keychain = (await import('keypear')).default;
+  const Keychain = (await import('keypear')).default; // https://github.com/holepunchto/keypear
 
 
 
