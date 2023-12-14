@@ -27,7 +27,6 @@ npm install "github:benzmuircroft/hyperdown"
   const Keychain = (await import('keypear')).default; // https://github.com/holepunchto/keypear
 
 
-
   // server
 
   const kp0 = new Keychain().get();
@@ -43,7 +42,6 @@ npm install "github:benzmuircroft/hyperdown"
       console.log('server: client used the event', remotePublicKey, eventsArray);
     }
   });
-
 
 
   // an online user
@@ -63,7 +61,6 @@ npm install "github:benzmuircroft/hyperdown"
   });
 
   await server.addEvent(kp1.publicKey, JSON.stringify({ prize: 500, game: 'robots' })); // give a online client an event
-
 
 
   // an offline user
