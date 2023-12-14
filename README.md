@@ -17,13 +17,9 @@ A user event memory for server and clients. Online users will receive events and
 ```js
 ;(async function() {
 
-
-
   const Keychain = (await import('keypear')).default;
 
   const sk = new Keychain().get();
-
-
 
   const server = await require('hyperdown')({
     uniqueKeyPair: sk,
@@ -37,10 +33,7 @@ A user event memory for server and clients. Online users will receive events and
     }
   });
 
-
-
   const ck = new Keychain().get();
-
 
   const client = await require('hyperdown')({
     uniqueKeyPair: ck,
@@ -54,9 +47,7 @@ A user event memory for server and clients. Online users will receive events and
     }
   });
 
-
   await server.addEvent(ck.publicKey, JSON.stringify({ prize: 500, game: 'robots' })); // give a client an event
-
 
 })();
 ```
