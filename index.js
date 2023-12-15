@@ -68,16 +68,14 @@ async function hyperdown(options) {
       }
     }
   });
-  await eventbase.ready();
+  await eventsbase.ready();
 
   hd.put = async function(o) {
-    await eventbase.append(o);
+    await eventsbase.append(o);
   };
   hd.view = async function() {
-    return await eventbase.view.get(eventbase.view.length - 1);
+    return await eventsbase.view.get(eventsbase.view.length - 1);
   };
-  // await eventbase.append({a: 1});
-  // await eventbase.view.get(eventbase.view.length - 1);
 
 
   
