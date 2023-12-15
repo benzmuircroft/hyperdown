@@ -69,7 +69,7 @@ async function hyperdown(options) {
     }
   });
   await eventsbase.ready();
-  console.log(eventsbase);
+  console.log(eventsbase.Autobase);
 
   hd.put = async function(o) {
     await eventsbase.append(o);
