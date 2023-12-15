@@ -54,7 +54,7 @@ async function hyperdown(options) {
 
 
   const store = new Corestore(folder);
-  const eventsbase = new Autobase(store, [ options.writerKey ] || [], {
+  const eventsbase = new Autobase(store, [options.writerKey] || [], {
     valueEncoding: 'json',
     function(store) {
       return store.get(options.folderName, { valueEncoding: 'json' });
@@ -74,7 +74,7 @@ async function hyperdown(options) {
   hd.writerKey = eventsbase.local.key;
   
   hd.put = async function(o) {
-    await eventsbase.append(o);
+    await eventsbase.append(b4a.from(o));
   };
   hd.view = async function() {
     return await eventsbase.view.get(eventsbase.view.length - 1);
