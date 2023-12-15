@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "autobase": "github:holepunchto/autobase#v1.0.0-alpha.9",
-    "hyperdbee": "github:benzmuircroft/hyperdbee#legacy",
+    "autodbee": "github:benzmuircroft/autodbee",
     "corestore": "6.15.13",
     "hyperswarm": "4.7.13",
     "protomux-rpc": "1.5.1",
