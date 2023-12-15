@@ -12,7 +12,7 @@ async function hyperdown(options) {
   const b4a = require('b4a');
   const goodbye = (await import('graceful-goodbye')).default;
 
-  let eventsbase, swarm, keyPair;
+  let swarm, keyPair;
 
   if (!options) {
     throw new Error('options object is missing');
