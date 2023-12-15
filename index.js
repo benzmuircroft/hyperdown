@@ -51,10 +51,10 @@ async function hyperdown(options) {
     folder += `/${options.testFolder}`;
   }
 
-
+  options.writerKey = options.writerKey ? [options.writerKey] : [];
 
   const store = new Corestore(folder);
-  const eventsbase = new Autobase(store, [options.writerKey] || [], {
+  const eventsbase = new Autobase(store, options.writerKey, {
     valueEncoding: 'json',
     function(store) {
       return store.get(options.folderName, { valueEncoding: 'json' });
