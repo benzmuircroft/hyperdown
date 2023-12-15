@@ -8,16 +8,15 @@
     "url": "https://github.com/benzmuircroft/hyperdown"
   },
   "dependencies": {
-    "autobase": "github:holepunchto/autobase#v1.0.0-alpha.8",
+    "autobase-next": "0.0.2",
     "autodbee": "github:benzmuircroft/autodbee",
-    "corestore": "6.15.13",
-    "hyperswarm": "4.7.13",
-    "protomux-rpc": "1.5.1",
-    "keypear": "1.2.0",
-    "b4a": "1.6.0",
-    "graceful-goodbye": "1.2.1",
-    "hyper-sdk": "4.2.4",
-    "@lejeunerenard/autobase-manager": "github:lejeunerenard/autobase-manager#1.1.0"
+    "corestore": "^6.15.13",
+    "hyperswarm": "^4.7.13",
+    "protomux-rpc": "^1.5.1",
+    "keypear": "^1.2.0",
+    "b4a": "^1.6.0",
+    "graceful-goodbye": "^1.2.1",
+    "hyper-sdk": "^4.2.4",
   },
   "keywords": [
     "local-first",
