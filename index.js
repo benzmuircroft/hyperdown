@@ -73,7 +73,7 @@ async function hyperdown(options) {
   hd.put = async function(o) {
     await eventbase.append(o);
   };
-  hd.view = await function() {
+  hd.view = async function() {
     return await eventbase.view.get(eventbase.view.length - 1);
   };
   // await eventbase.append({a: 1});
