@@ -1,5 +1,6 @@
 async function hyperdown(options) {
 
+  const hd = {};
   const Corestore = require('corestore');
   const Autobase = require('autobase');
   const AutobaseManager = (await import('@lejeunerenard/autobase-manager')).AutobaseManager;
@@ -57,7 +58,7 @@ async function hyperdown(options) {
   await output.ready();
 
   if (options.isServer) { // --------------------------------------- server
-    this.onClientConsumedEvents = options.onClientConsumedEvents;
+    hd.onClientConsumedEvents = options.onClientConsumedEvents;
     base = new Autobase({
       inputs: [input],
       localInput: input,
@@ -72,7 +73,7 @@ async function hyperdown(options) {
     );
     await manager.ready();
     const autobee = new Autodeebee(base);
-    this.db = new DB(autobee);
+    hd.db = new DB(autobee);
     const id = {
       cy:
         [
@@ -96,13 +97,13 @@ async function hyperdown(options) {
         return e;
       }
     };
-    this.addEvent = async function(userPublicKey, data) {
+    hd.addEvent = async function(userPublicKey, data) {
       const hyperdownId = id.of(+new Date());
-      const user = await this.db.collection('events').findOne(userPublicKey);
+      const user = await hd.db.collection('events').findOne(userPublicKey);
       let events = user.events;
       data.hyperdownId = hyperdownId;
       events[hyperdownId] = data;
-      await this.db.collection('events').update({ _id: userPublicKey }, { events: events }, { multi: false, upsert: true });
+      await hd.db.collection('events').update({ _id: userPublicKey }, { events: events }, { multi: false, upsert: true });
       if (!user.offline && clients[userPublicKey]) {
         clients[userPublicKey].event('event', b4a.from(JSON.stringify(data)));
       }
@@ -119,7 +120,7 @@ async function hyperdown(options) {
       clients[rpc.remotePublicKey] = rpc;
       rpc.event('isServer'); // tell the client you are the server ...
       rpc.respond('consumedEvents', async function(data) {
-        let user = await this.db.collection('events').findOne(rpc.remotePublicKey);
+        let user = await hd.db.collection('events').findOne(rpc.remotePublicKey);
         let consumedEvents = [];
         for (const hyperdownId in user.events) {
           if (user.consumed.includes(hyperdownId)) {
@@ -127,13 +128,13 @@ async function hyperdown(options) {
             delete user.events[hyperdownId];
           }
         }
-        await this.db.collection('events').update({ _id: rpc.remotePublicKey }, { events: user.events, consumed: [] }, { multi: false });
-        this.onClientConsumedEvents(rpc.remotePublicKey, consumedEvents); // application can handle anything it needs to ....
+        await hd.db.collection('events').update({ _id: rpc.remotePublicKey }, { events: user.events, consumed: [] }, { multi: false });
+        hd.onClientConsumedEvents(rpc.remotePublicKey, consumedEvents); // application can handle anything it needs to ....
       });
       rpc.on('close', async function() {
         delete clients[rpc.remotePublicKey];
-        if (!(await this.db.collection('events').findOne(rpc.remotePublicKey)).offline) {
-          await this.db.collection('events').update({ _id: rpc.remotePublicKey }, { offline: true }, { multi: false });
+        if (!(await hd.db.collection('events').findOne(rpc.remotePublicKey)).offline) {
+          await hd.db.collection('events').update({ _id: rpc.remotePublicKey }, { offline: true }, { multi: false });
         }
       });
     });
@@ -142,7 +143,7 @@ async function hyperdown(options) {
     await swarm.flush();
   }
   else { // ---------------------------------------------------------------- client
-    this.eventHandler = options.eventHandler;
+    hd.eventHandler = options.eventHandler;
     base = new Autobase({
       inputs: [input],
       localInput: input,
@@ -158,7 +159,7 @@ async function hyperdown(options) {
     );
     await manager.ready();
     const autobee = new Autodeebee(base);
-    this.db = new DB(autobee);
+    hd.db = new DB(autobee);
     swarm = new Hyperswarm({
       keyPair: keyPair
     });
@@ -181,12 +182,12 @@ async function hyperdown(options) {
         if (!e) {
           const hyperdownId = data.hyperdownId + ''; // clone
           delete data.hyperdownId;
-          this.eventHandler(hyperdownId, data, async function(id, bool) { // call back
+          hd.eventHandler(hyperdownId, data, async function(id, bool) { // call back
             if (id !== hyperdownId) {
               throw new Error(`Malformed hyperdownId for event. Got: '${id}', expected: '${hyperdownId}'`);
             }
             if (bool) { // true
-              await this.db.collection('events').update({ _id: keyPair.publicKey }, { $push: { consumed: hyperdownId } }, { multi: false, upsert: true });
+              await hd.db.collection('events').update({ _id: keyPair.publicKey }, { $push: { consumed: hyperdownId } }, { multi: false, upsert: true });
               if (server) {
                 server.event('consumedEvents');
               }
@@ -196,7 +197,7 @@ async function hyperdown(options) {
       });
     });
     goodbye(async function() {
-      await this.db.collection('events').update({ _id: keyPair.publicKey }, { offline: true }, { multi: false });
+      await hd.db.collection('events').update({ _id: keyPair.publicKey }, { offline: true }, { multi: false });
       swarm.destroy();
     });
     await swarm.join(b4a.alloc(32).fill(options.folderName), { server: true, client: true });
@@ -207,16 +208,16 @@ async function hyperdown(options) {
       rpc.on('close', function() {
         server = undefined;
       });
-      if (!await this.db.collection('events').findOne(keyPair.publicKey)) {
-        await this.db.collection('events').insert({ _id: keyPair.publicKey, offline: false, events: {} });
+      if (!await hd.db.collection('events').findOne(keyPair.publicKey)) {
+        await hd.db.collection('events').insert({ _id: keyPair.publicKey, offline: false, events: {} });
       }
       else {
-        await this.db.collection('events').update({ _id: keyPair.publicKey }, { offline: false }, { multi: false });
+        await hd.db.collection('events').update({ _id: keyPair.publicKey }, { offline: false }, { multi: false });
       }
       // look up our events and consume them ...
-      let found = (await this.db.collection('events').findOne({ _id: keyPair.publicKey })).events;
-      this.evs = JSON.stringify(JSON.parse(found));
-      if (this.evs.length) {
+      let found = (await hd.db.collection('events').findOne({ _id: keyPair.publicKey })).events;
+      hd.events = JSON.stringify(JSON.parse(found));
+      if (hd.events.length) {
         let hyperdownId = Object.keys(found);
         ;(async function next(s, that) {
           if (found[hyperdownId[s]]) {
@@ -225,7 +226,7 @@ async function hyperdown(options) {
                 throw new Error(`Malformed hyperdownId for event. Got: '${id}', expected: '${hyperdownId[s]}'`);
               }
               if (bool) { // true
-                await this.db.collection('events').update({ _id: keyPair.publicKey }, { $push: { consumed: hyperdownId[s] } }, { multi: false, upsert: true });
+                await hd.db.collection('events').update({ _id: keyPair.publicKey }, { $push: { consumed: hyperdownId[s] } }, { multi: false, upsert: true });
               }
               await next(s + 1, that);
             });
@@ -240,5 +241,6 @@ async function hyperdown(options) {
       }
     }
   }
+  return hd;
 };
 module.exports = hyperdown;
