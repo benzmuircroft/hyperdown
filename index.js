@@ -69,6 +69,7 @@ async function hyperdown(options) {
     }
   });
   await eventsbase.ready();
+  console.log(eventsbase);
 
   hd.put = async function(o) {
     await eventsbase.append(o);
