@@ -74,7 +74,7 @@ async function hyperdown(options) {
   hd.writerKey = eventsbase.local.key;
   
   hd.put = async function(o) {
-    await eventsbase.append(b4a.from(o));
+    await eventsbase.append(o);
   };
   hd.view = async function() {
     return await eventsbase.view.get(eventsbase.view.length - 1);
