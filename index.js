@@ -69,12 +69,11 @@ async function hyperdown(options) {
     }
   });
   await eventsbase.ready();
-  console.log(eventsbase.Autobase);
 
   hd.writerKey = eventsbase.local.key;
   
-  hd.put = async function(o) {
-    await eventsbase.append(o);
+  hd.put = async function(obj) {
+    await eventsbase.append(obj); // Error: Not writable
   };
   hd.view = async function() {
     return await eventsbase.view.get(eventsbase.view.length - 1);
