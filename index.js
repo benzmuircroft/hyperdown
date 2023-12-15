@@ -12,7 +12,7 @@ async function hyperdown(options) {
   const b4a = require('b4a');
   const goodbye = (await import('graceful-goodbye')).default;
 
-  let base, swarm, keyPair;
+  let eventsbase, swarm, keyPair;
 
   if (!options) {
     throw new Error('options object is missing');
@@ -57,20 +57,20 @@ async function hyperdown(options) {
   const eventsbase = new Autobase(store, [], {
     valueEncoding: 'json',
     function(store) {
-      return store.get(options.folderName, { valueEncoding: 'json' })
+      return store.get(options.folderName, { valueEncoding: 'json' });
     },
     async function(nodes, view, base) {
       for (const node of nodes) {
         if (node.value.add) {
-          base.system.addWriter(b4a.from(node.value.add, 'hex'))
+          base.system.addWriter(b4a.from(node.value.add, 'hex'));
         }
-        await view.append(node.value)
+        await view.append(node.value);
       }
     }
-  })
-  await eventbase.ready()
-  // await eventbase.append({a: 1})
-  // await eventbase.view.get(eventbase.view.length - 1)
+  });
+  await eventbase.ready();
+  // await eventbase.append({a: 1});
+  // await eventbase.view.get(eventbase.view.length - 1);
 
 
   
