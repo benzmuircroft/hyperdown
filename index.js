@@ -81,15 +81,28 @@ async function hyperdown(options) {
   */
 
   
-  // const store = new Corestore(folder);
-  // const input = store.get({ name: 'input', sparse: false, valueEncoding: 'json' });
-  // const output = store.get({ name: 'output', sparse: false, valueEncoding: 'json' });
-  // await input.ready();
-  // await output.ready();
+  const store = new Corestore(folder);
+  const input = store.get({ name: 'input', sparse: false, valueEncoding: 'json' });
+  const output = store.get({ name: 'output', sparse: false, valueEncoding: 'json' });
+  await input.ready();
+  await output.ready();
 
   if (options.isServer) { // --------------------------------------- server
+    //hd.onClientConsumedEvents = options.onClientConsumedEvents;
+    base = new Autobase({
+      inputs: [input],
+      localInput: input,
+      localOutput: output
+    });
+    const manager = new AutobaseManager(
+      base,
+      (key, coreType, channel) => true, // function to filter core keys
+      store.get.bind(store), // get(key) function to get a hypercore given a key
+      store.storage, // Storage for managing autobase keys
+      { id: options.folderName } // Options
+    );
+    await manager.ready();
     /*
-    hd.onClientConsumedEvents = options.onClientConsumedEvents;
     const autobee = new Autodeebee(eventsbase);
     hd.db = new DB(autobee);
     const id = {
@@ -132,7 +145,8 @@ async function hyperdown(options) {
     });
     const clients = {};
     swarm.on('connection', function(socket) {
-      store.replicate(socket);
+      const stream = store.replicate(socket);
+      manager.attachStream(stream); // Attach manager
       /*
       const rpc = new ProtomuxRPC(socket);
       rpc.remotePublicKey = socket.remotePublicKey;
@@ -164,6 +178,19 @@ async function hyperdown(options) {
   }
   else { // ---------------------------------------------------------------- client
     // hd.eventHandler = options.eventHandler;
+    base = new Autobase({
+      inputs: [input],
+      localInput: input,
+      localOutput: output
+    });
+    const manager = new AutobaseManager(
+      base,
+      (key, coreType, channel) => true, // function to filter core keys
+      store.get.bind(store), // get(key) function to get a hypercore given a key
+      store.storage, // Storage for managing autobase keys
+      { id: options.folderName } // Options
+    );
+    await manager.ready();
     // const autobee = new Autodeebee(eventsbase);
     // hd.db = new DB(autobee);
     // let server;
@@ -171,7 +198,8 @@ async function hyperdown(options) {
       keyPair: keyPair
     });
     swarm.on('connection', async function(socket) {
-      store.replicate(socket);
+      const stream = store.replicate(socket);
+      manager.attachStream(stream); // Attach manager
       /*
       const rpc = new ProtomuxRPC(socket);
       rpc.remotePublicKey = socket.remotePublicKey;
@@ -251,6 +279,13 @@ async function hyperdown(options) {
     }
     */
   }
+  hd.put = function(o) {
+    await base.append(o);
+  };
+  hd.view = function() {
+    await base.view.update()
+    await base.view.get(base.view.length - 1)
+  };
   return hd;
 };
 module.exports = hyperdown;
