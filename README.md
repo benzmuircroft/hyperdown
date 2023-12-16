@@ -1,7 +1,7 @@
 # 🕳🥊 Hyperdown
 A user event memory for server and clients. Online users will receive events and handle them normally. Offline users will have their events stored and replicated for later retrieval and handling. If the server goes down all the clients will still store and replicate the events.
 
-## Status
+## Status = Do Not Use
 ⚠️ Currently there is a problem with hyperdeebee and b4a that needs to be resolved
 - todo: use new autobase
 - todo: remove hyperdeebee and do the same thing simplified
