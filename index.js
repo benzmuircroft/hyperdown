@@ -279,10 +279,10 @@ async function hyperdown(options) {
     }
     */
   }
-  hd.put = function(o) {
+  hd.put = async function(o) {
     await base.append(o);
   };
-  hd.view = function() {
+  hd.view = async function() {
     await base.view.update()
     await base.view.get(base.view.length - 1)
   };
