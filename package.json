@@ -8,6 +8,7 @@
     "url": "https://github.com/benzmuircroft/hyperdown"
   },
   "dependencies": {
+    "@lejeunerenard/autobase-manager": "1.2.0",
     "autobase": "github:holepunchto/autobase#v1.0.0-alpha.9",
     "autodbee": "github:benzmuircroft/autodbee",
     "corestore": "^6.15.13",
