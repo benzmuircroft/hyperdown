@@ -3,6 +3,8 @@ A user event memory for server and clients. Online users will receive events and
 
 ## Installation
 ⚠️ Currently there is a problem with hyperdeebee and b4a that needs to be resolved
+- todo: use new autobase
+- todo: remove hyperdeebee and do the same thing simplified
 ```
 npm install "github:benzmuircroft/hyperdown"
 ```
