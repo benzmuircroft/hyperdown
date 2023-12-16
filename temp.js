@@ -40,12 +40,12 @@
 
   //await server.addEvent(ck.publicKey, JSON.stringify({ prize: 500, game: 'robots' })); // give a client an event
 
+  // errors here
+  await server.put('server', 'h');
+  await client.put('client', 'a');
 
-  await server.put({ server: 1 });
-  await client.put({ client: 2, other: 3 });
-
-  await server.view(); // assumption: should see the entire db ...
-  await client.view();
+  await server.get('client');
+  await client.get('server');
 
 
 })();
