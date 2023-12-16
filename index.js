@@ -3,7 +3,7 @@ async function hyperdown(options) {
   const hd = {};
   const Corestore = require('corestore');
   const Autobase = require('autobase');
-  // const AutobaseManager = (await import('@lejeunerenard/autobase-manager')).AutobaseManager;
+  const AutobaseManager = (await import('@lejeunerenard/autobase-manager')).AutobaseManager;
   // const Autodeebee = require('autodbee/autodeebee');
   // const { DB } = require('autodbee');
   const Hyperswarm = require('hyperswarm');
@@ -50,7 +50,7 @@ async function hyperdown(options) {
   if (options.testFolder) {
     folder += `/${options.testFolder}`;
   }
-
+  /*
   options.writerKey = options.writerKey ? [options.writerKey] : [];
 
   const store = new Corestore(folder);
@@ -78,7 +78,7 @@ async function hyperdown(options) {
   hd.view = async function() {
     return await eventsbase.view.get(eventsbase.view.length - 1);
   };
-
+  */
 
   
   // const store = new Corestore(folder);
