@@ -94,6 +94,24 @@ async function hyperdown(options) {
       localInput: input,
       localOutput: output
     });
+    base.start({
+      unwrap: true,
+      apply: async function applyAutobeeBatch (bee, batch) {
+        const b = bee.batch({ update: false });
+        for (const node of batch) {
+          const op = JSON.parse(node.value.toString());
+          // TODO: Handle deletions
+          if (op.type === 'put') await b.put(op.key, op.value);
+        }
+        await b.flush();
+      },
+      view: core => new Hyperbee(core.unwrap(), {
+        {},
+        extension: false
+      })
+    });
+    hd.bee = base.view;
+    await base.ready();
     const manager = new AutobaseManager(
       base,
       (key, coreType, channel) => true, // function to filter core keys
@@ -183,6 +201,24 @@ async function hyperdown(options) {
       localInput: input,
       localOutput: output
     });
+    base.start({
+      unwrap: true,
+      apply: async function applyAutobeeBatch (bee, batch) {
+        const b = bee.batch({ update: false });
+        for (const node of batch) {
+          const op = JSON.parse(node.value.toString());
+          // TODO: Handle deletions
+          if (op.type === 'put') await b.put(op.key, op.value);
+        }
+        await b.flush();
+      },
+      view: core => new Hyperbee(core.unwrap(), {
+        {},
+        extension: false
+      })
+    });
+    hd.bee = base.view;
+    await base.ready();
     const manager = new AutobaseManager(
       base,
       (key, coreType, channel) => true, // function to filter core keys
@@ -279,12 +315,12 @@ async function hyperdown(options) {
     }
     */
   }
-  hd.put = async function(o) {
-    await base.append(JSON.stringify(o));
+  hd.put = async function(key, value) {
+    const op = Buffer.from(JSON.stringify({ type: 'put', key, value }));
+    return await base.append(op);
   };
-  hd.view = async function() {
-    await base.view.update()
-    await base.view.get(base.view.length - 1)
+  hd.get = async function(key) {
+    return await hd.bee.get(key);
   };
   return hd;
 };
