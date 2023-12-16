@@ -106,7 +106,6 @@ async function hyperdown(options) {
         await b.flush();
       },
       view: core => new Hyperbee(core.unwrap(), {
-        {},
         extension: false
       })
     });
@@ -213,7 +212,6 @@ async function hyperdown(options) {
         await b.flush();
       },
       view: core => new Hyperbee(core.unwrap(), {
-        {},
         extension: false
       })
     });
