@@ -280,7 +280,7 @@ async function hyperdown(options) {
     */
   }
   hd.put = async function(o) {
-    await base.append(b4a.from(o));
+    await base.append(b4a.from(JSON.stringify(o)));
   };
   hd.view = async function() {
     await base.view.update()
