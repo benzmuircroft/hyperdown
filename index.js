@@ -102,7 +102,7 @@ async function hyperdown(options) {
         for (const node of batch) {
           const op = JSON.parse(node.value.toString());
           // TODO: Handle deletions
-          if (op.type === 'put') await b.put(op.key, op.value);
+          if (op.type === 'put') await b.put(b4a.from(op.key), b4a.from(op.value));
         }
         await b.flush();
       },
