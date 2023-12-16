@@ -8,7 +8,7 @@
 
 
 
-  const server = await require('./index.js')({
+  const server = await require('hyperdown')({
     uniqueKeyPair:          sk,
     folderName:             'topic',
     testFolder:             'server',
@@ -25,7 +25,7 @@
   const ck = new Keychain().get();
 
 
-  const client = await require('./index.js')({
+  const client = await require('hyperdown')({
     uniqueKeyPair:          ck,
     folderName:             'topic',
     testFolder:             'client',
@@ -44,7 +44,7 @@
   await server.put({ server: 1 });
   await client.put({ client: 2, other: 3 });
 
-  await server.view();
+  await server.view(); // assumption: should see the entire db ...
   await client.view();
 
 
