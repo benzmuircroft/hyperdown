@@ -4,7 +4,7 @@ async function hyperdown(options) {
   const Corestore = require('corestore');
   const Autobase = require('autobase');
   const AutobaseManager = (await import('@lejeunerenard/autobase-manager')).AutobaseManager;
-  const hyperbee = require('hyperbee');
+  const Yyperbee = require('hyperbee');
   // const Autodeebee = require('autodbee/autodeebee');
   // const { DB } = require('autodbee');
   const Hyperswarm = require('hyperswarm');
