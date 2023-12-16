@@ -3,9 +3,9 @@ async function hyperdown(options) {
   const hd = {};
   const Corestore = require('corestore');
   const Autobase = require('autobase-next');
-  //const AutobaseManager = (await import('@lejeunerenard/autobase-manager')).AutobaseManager;
-  const Autodeebee = require('autodbee/autodeebee');
-  const { DB } = require('autodbee');
+  // const AutobaseManager = (await import('@lejeunerenard/autobase-manager')).AutobaseManager;
+  // const Autodeebee = require('autodbee/autodeebee');
+  // const { DB } = require('autodbee');
   const Hyperswarm = require('hyperswarm');
   const ProtomuxRPC = require('protomux-rpc');
   const Keychain = (await import('keypear')).default;
