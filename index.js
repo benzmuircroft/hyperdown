@@ -92,7 +92,7 @@ async function hyperdown(options) {
       { id: options.folderName } // Options
     );
     await manager.ready();
-    const autobee = new Autodeebee(eventsbase);
+    const autobee = new Autodeebee(base);
     hd.db = new DB(autobee);
     const id = {
       cy:
@@ -196,7 +196,7 @@ async function hyperdown(options) {
       { id: options.folderName } // Options
     );
     await manager.ready();
-    const autobee = new Autodeebee(eventsbase);
+    const autobee = new Autodeebee(base);
     hd.db = new DB(autobee);
     let server;
     swarm = new Hyperswarm({
