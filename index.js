@@ -138,7 +138,7 @@ async function hyperdown(options) {
       manager.attachStream(stream); // Attach manager
       const rpc = new ProtomuxRPC(socket);
       console.log(typeof socket.remotePublicKey);
-      rpc.remotePublicKey = socket.remotePublicKey.toString(); // ?
+      rpc.remotePublicKey = socket.remotePublicKey.toString('hex'); // ?
       clients[rpc.remotePublicKey] = rpc;
       rpc.event('isServer'); // tell the client you are the server ...
       rpc.respond('consumedEvents', async function(data) {
@@ -204,7 +204,7 @@ async function hyperdown(options) {
     swarm = new Hyperswarm({
       keyPair: keyPair
     });
-    const publicKey = keyPair.publicKey.toString();
+    const publicKey = keyPair.publicKey.toString('hex');
     swarm.on('connection', async function(socket) {
       const stream = store.replicate(socket);
       manager.attachStream(stream); // Attach manager
@@ -260,7 +260,7 @@ async function hyperdown(options) {
       // look up our events and consume them ...
       let found = (await hd.db.collection('events').findOne({ _id: publicKey })).events;
       console.log('test', await hd.db.collection('events').findOne({ _id: publicKey }));
-      hd.events = JSON.stringify(JSON.parse(found));
+      hd.events = JSON.parse(JSON.stringify(found));
       if (hd.events.length) {
         let hyperdownId = Object.keys(found);
         ;(async function next(s, that) {
