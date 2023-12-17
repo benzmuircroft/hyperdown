@@ -64,14 +64,14 @@ npm install "github:benzmuircroft/hyperdown"
     }
   });
 
-  await server.addEvent(kp1.publicKey, JSON.stringify({ prize: 500, game: 'boxing' })); // give a online client an event
+  await server.addEvent(kp1.publicKey, { prize: 500, game: 'boxing' }); // give a online client an event
 
 
   // an offline user
 
   const kp2 = new Keychain().get();
 
-  await server.addEvent(kp2.publicKey, JSON.stringify({ prize: -500, game: 'boxing' })); // give a offline client an event
+  await server.addEvent(kp2.publicKey, { prize: -500, game: 'boxing' }); // give a offline client an event
 
   const offlineClient = await require('hyperdown')({ // they come back later ...
     uniqueKeyPair: kp2,
