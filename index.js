@@ -319,7 +319,7 @@ async function hyperdown(options) {
     return await base.append(op);
   };
   hd.get = async function(key) {
-    await base.update();
+    await base.view.update();
     return await hd.bee.get(key);
   };
   return hd;
