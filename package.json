@@ -11,7 +11,7 @@
     "@lejeunerenard/autobase-manager": "github:lejeunerenard/autobase-manager#1.2.0",
     "autobase": "github:holepunchto/autobase#v1.0.0-alpha.9",
     "autodbee": "github:benzmuircroft/autodbee",
-    "hyperbee": "2.18.1",
+    "hyperbee": "github:holepunchto/hyperbee#cas-prev-null",
     "corestore": "^6.15.13",
     "hyperswarm": "^4.7.13",
     "protomux-rpc": "^1.5.1",
