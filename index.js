@@ -136,7 +136,8 @@ async function hyperdown(options) {
       const stream = store.replicate(socket);
       manager.attachStream(stream); // Attach manager
       const rpc = new ProtomuxRPC(socket);
-      rpc.remotePublicKey = socket.remotePublicKey;
+      console.log(typeof socket.remotePublicKey);
+      rpc.remotePublicKey = socket.remotePublicKey.toString(); // ?
       clients[rpc.remotePublicKey] = rpc;
       rpc.event('isServer'); // tell the client you are the server ...
       rpc.respond('consumedEvents', async function(data) {
@@ -202,6 +203,7 @@ async function hyperdown(options) {
     swarm = new Hyperswarm({
       keyPair: keyPair
     });
+    const publicKey = keyPair.publicKey.toString();
     swarm.on('connection', async function(socket) {
       const stream = store.replicate(socket);
       manager.attachStream(stream); // Attach manager
@@ -226,7 +228,7 @@ async function hyperdown(options) {
               throw new Error(`Malformed hyperdownId for event. Got: '${id}', expected: '${hyperdownId}'`);
             }
             if (bool) { // true
-              await hd.db.collection('events').update({ _id: keyPair.publicKey }, { $push: { consumed: hyperdownId } }, { multi: false, upsert: true });
+              await hd.db.collection('events').update({ _id: publicKey }, { $push: { consumed: hyperdownId } }, { multi: false, upsert: true });
               if (server) {
                 server.event('consumedEvents');
               }
@@ -236,7 +238,7 @@ async function hyperdown(options) {
       });
     });
     goodbye(async function() {
-      await hd.db.collection('events').update({ _id: keyPair.publicKey }, { offline: true }, { multi: false });
+      await hd.db.collection('events').update({ _id: publicKey }, { offline: true }, { multi: false });
       swarm.destroy();
     });
     await swarm.join(b4a.alloc(32).fill(options.folderName), { server: true, client: true });
@@ -248,14 +250,14 @@ async function hyperdown(options) {
       rpc.on('close', function() {
         server = undefined;
       });
-      if (!await hd.db.collection('events').findOne(keyPair.publicKey)) {
-        await hd.db.collection('events').insert({ _id: keyPair.publicKey, offline: false, events: {} });
+      if (!await hd.db.collection('events').findOne(publicKey)) {
+        await hd.db.collection('events').insert({ _id: publicKey, offline: false, events: {} });
       }
       else {
-        await hd.db.collection('events').update({ _id: keyPair.publicKey }, { offline: false }, { multi: false });
+        await hd.db.collection('events').update({ _id: publicKey }, { offline: false }, { multi: false });
       }
       // look up our events and consume them ...
-      let found = (await hd.db.collection('events').findOne({ _id: keyPair.publicKey })).events;
+      let found = (await hd.db.collection('events').findOne({ _id: publicKey })).events;
       hd.events = JSON.stringify(JSON.parse(found));
       if (hd.events.length) {
         let hyperdownId = Object.keys(found);
@@ -266,7 +268,7 @@ async function hyperdown(options) {
                 throw new Error(`Malformed hyperdownId for event. Got: '${id}', expected: '${hyperdownId[s]}'`);
               }
               if (bool) { // true
-                await hd.db.collection('events').update({ _id: keyPair.publicKey }, { $push: { consumed: hyperdownId[s] } }, { multi: false, upsert: true });
+                await hd.db.collection('events').update({ _id: publicKey }, { $push: { consumed: hyperdownId[s] } }, { multi: false, upsert: true });
               }
               await next(s + 1, that);
             });
