@@ -102,7 +102,7 @@ async function hyperdown(options) {
         for (const node of batch) {
           const op = JSON.parse(node.value.toString());
           // TODO: Handle deletions
-          if (op.type === 'put') await b.put(op.key, op.value);
+          if (op.type === 'put') await b.put(op.key, op.value.toString());
         }
         await b.flush();
       },
@@ -208,7 +208,7 @@ async function hyperdown(options) {
         for (const node of batch) {
           const op = JSON.parse(node.value.toString());
           // TODO: Handle deletions
-          if (op.type === 'put') await b.put(op.key, op.value);
+          if (op.type === 'put') await b.put(op.key, op.value.toString());
         }
         await b.flush();
       },
@@ -320,7 +320,8 @@ async function hyperdown(options) {
   };
   hd.get = async function(key) {
     await base.view.update();
-    return await hd.bee.get(key);
+    const key = await hd.bee.get(key);
+    return key.value;
   };
   return hd;
 };
