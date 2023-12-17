@@ -120,7 +120,7 @@ async function hyperdown(options) {
     hd.addEvent = async function(userPublicKey, data) {
       const hyperdownId = id.of(+new Date());
       const user = await hd.db.collection('events').findOne(userPublicKey);
-      console.log('test', 'addEvent', user);
+      console.log('test', 'addEvent', userPublicKey, data, user);
       let events = user.events || {};
       data.hyperdownId = hyperdownId;
       events[hyperdownId] = data;
