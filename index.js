@@ -123,10 +123,10 @@ async function hyperdown(options) {
       }
       const hyperdownId = id.of(+new Date());
       const user = await hd.db.collection('events').findOne(userPublicKey);
-      console.log('test', 'addEvent', userPublicKey, data, user);
       let events = user.events || {};
       data.hyperdownId = hyperdownId;
       events[hyperdownId] = data;
+      console.log('test', 'addEvent', userPublicKey, data, user, hyperdownId);
       await hd.db.collection('events').update({ _id: userPublicKey }, { events: events }, { multi: false, upsert: true });
       if (!user.offline && clients[userPublicKey]) {
         clients[userPublicKey].event('event', b4a.from(JSON.stringify(data)));
