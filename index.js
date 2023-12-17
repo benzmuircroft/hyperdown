@@ -226,7 +226,8 @@ async function hyperdown(options) {
         }
         if (!e) {
           const hyperdownId = data.hyperdownId + ''; // clone
-          delete data.hyperdownId;
+          console.log('test','wheres the id?', data);
+          // delete data.hyperdownId;
           hd.eventHandler(hyperdownId, data, async function(id, bool) { // call back
             if (id !== hyperdownId) {
               throw new Error(`Malformed hyperdownId for event. Got: '${id}', expected: '${hyperdownId}'`);
