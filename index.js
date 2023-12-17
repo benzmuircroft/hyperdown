@@ -321,7 +321,7 @@ async function hyperdown(options) {
   hd.get = async function(key) {
     await base.view.update();
     key = await hd.bee.get(key);
-    return key.value;
+    return JSON.parse(key.value.toString());
   };
   return hd;
 };
