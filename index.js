@@ -120,6 +120,7 @@ async function hyperdown(options) {
     hd.addEvent = async function(userPublicKey, data) {
       const hyperdownId = id.of(+new Date());
       const user = await hd.db.collection('events').findOne(userPublicKey);
+      console.log('test', 'addEvent', user);
       let events = user.events;
       data.hyperdownId = hyperdownId;
       events[hyperdownId] = data;
@@ -258,6 +259,7 @@ async function hyperdown(options) {
       }
       // look up our events and consume them ...
       let found = (await hd.db.collection('events').findOne({ _id: publicKey })).events;
+      console.log('test', await hd.db.collection('events').findOne({ _id: publicKey }));
       hd.events = JSON.stringify(JSON.parse(found));
       if (hd.events.length) {
         let hyperdownId = Object.keys(found);
