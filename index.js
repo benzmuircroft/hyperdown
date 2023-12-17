@@ -118,6 +118,9 @@ async function hyperdown(options) {
       }
     };
     hd.addEvent = async function(userPublicKey, data) {
+      if (typeof data !== 'object') {
+        throw new Error('data needs to be an object');
+      }
       if (typeof userPublicKey.toString == 'function') {
         userPublicKey = userPublicKey.toString('hex');
       }
@@ -126,7 +129,6 @@ async function hyperdown(options) {
       let events = user.events || {};
       data.hyperdownId = hyperdownId;
       events[hyperdownId] = data;
-      console.log('test', 'addEvent', userPublicKey, data, user, hyperdownId);
       await hd.db.collection('events').update({ _id: userPublicKey }, { events: events }, { multi: false, upsert: true });
       if (!user.offline && clients[userPublicKey]) {
         clients[userPublicKey].event('event', b4a.from(JSON.stringify(data)));
@@ -140,8 +142,7 @@ async function hyperdown(options) {
       const stream = store.replicate(socket);
       manager.attachStream(stream); // Attach manager
       const rpc = new ProtomuxRPC(socket);
-      console.log(typeof socket.remotePublicKey);
-      rpc.remotePublicKey = socket.remotePublicKey.toString('hex'); // ?
+      rpc.remotePublicKey = socket.remotePublicKey.toString('hex');
       clients[rpc.remotePublicKey] = rpc;
       rpc.event('isServer'); // tell the client you are the server ...
       rpc.respond('consumedEvents', async function(data) {
@@ -226,8 +227,7 @@ async function hyperdown(options) {
         }
         if (!e) {
           const hyperdownId = data.hyperdownId + ''; // clone
-          console.log('test','wheres the id?', data);
-          // delete data.hyperdownId;
+          delete data.hyperdownId;
           hd.eventHandler(hyperdownId, data, async function(id, bool) { // call back
             if (id !== hyperdownId) {
               throw new Error(`Malformed hyperdownId for event. Got: '${id}', expected: '${hyperdownId}'`);
@@ -250,7 +250,6 @@ async function hyperdown(options) {
     await swarm.flush();
     // when the server is ready to talk ...
     async function hasServer(rpc) {
-      console.log('has server');
       server = rpc;
       rpc.on('close', function() {
         server = undefined;
@@ -263,7 +262,6 @@ async function hyperdown(options) {
       }
       // look up our events and consume them ...
       let found = (await hd.db.collection('events').findOne({ _id: publicKey })).events;
-      console.log('test', await hd.db.collection('events').findOne({ _id: publicKey }));
       hd.events = JSON.parse(JSON.stringify(found));
       if (hd.events.length) {
         let hyperdownId = Object.keys(found);
