@@ -5,8 +5,8 @@ async function hyperdown(options) {
   const Autobase = require('autobase');
   const AutobaseManager = (await import('@lejeunerenard/autobase-manager')).AutobaseManager;
   const Hyperbee = require('hyperbee');
-  // const Autodeebee = require('autodbee/autodeebee');
-  // const { DB } = require('autodbee');
+  const Autodeebee = require('autodbee/autodeebee');
+  const { DB } = require('autodbee');
   const Hyperswarm = require('hyperswarm');
   const ProtomuxRPC = require('protomux-rpc');
   const Keychain = (await import('keypear')).default;
@@ -51,36 +51,6 @@ async function hyperdown(options) {
   if (options.testFolder) {
     folder += `/${options.testFolder}`;
   }
-  /*
-  options.writerKey = options.writerKey ? [options.writerKey] : [];
-
-  const store = new Corestore(folder);
-  const eventsbase = new Autobase(store, options.writerKey, {
-    valueEncoding: 'json',
-    function(store) {
-      return store.get(options.folderName, { valueEncoding: 'json' });
-    },
-    async function(nodes, view, base) {
-      for (const node of nodes) {
-        if (node.value.add) {
-          base.system.addWriter(b4a.from(node.value.add, 'hex'));
-        }
-        await view.append(node.value);
-      }
-    }
-  });
-  await eventsbase.ready();
-
-  hd.writerKey = eventsbase.local.key;
-  
-  hd.put = async function(obj) {
-    await eventsbase.append(obj); // Error: Not writable
-  };
-  hd.view = async function() {
-    return await eventsbase.view.get(eventsbase.view.length - 1);
-  };
-  */
-
   
   const store = new Corestore(folder);
   const input = store.get({ name: 'input', sparse: false/*, valueEncoding: 'json'*/ });
@@ -89,12 +59,13 @@ async function hyperdown(options) {
   await output.ready();
 
   if (options.isServer) { // --------------------------------------- server
-    //hd.onClientConsumedEvents = options.onClientConsumedEvents;
+    hd.onClientConsumedEvents = options.onClientConsumedEvents;
     base = new Autobase({
       inputs: [input],
       localInput: input,
       localOutput: output
     });
+    /*
     base.start({
       unwrap: true,
       apply: async function applyAutobeeBatch (bee, batch) {
@@ -111,6 +82,7 @@ async function hyperdown(options) {
       })
     });
     hd.bee = base.view;
+    */
     await base.ready();
     const manager = new AutobaseManager(
       base,
@@ -120,7 +92,6 @@ async function hyperdown(options) {
       { id: options.folderName } // Options
     );
     await manager.ready();
-    /*
     const autobee = new Autodeebee(eventsbase);
     hd.db = new DB(autobee);
     const id = {
@@ -157,7 +128,6 @@ async function hyperdown(options) {
         clients[userPublicKey].event('event', b4a.from(JSON.stringify(data)));
       }
     };
-    */
     swarm = new Hyperswarm({
       keyPair: keyPair
     });
@@ -165,7 +135,6 @@ async function hyperdown(options) {
     swarm.on('connection', function(socket) {
       const stream = store.replicate(socket);
       manager.attachStream(stream); // Attach manager
-      /*
       const rpc = new ProtomuxRPC(socket);
       rpc.remotePublicKey = socket.remotePublicKey;
       clients[rpc.remotePublicKey] = rpc;
@@ -188,19 +157,19 @@ async function hyperdown(options) {
           await hd.db.collection('events').update({ _id: rpc.remotePublicKey }, { offline: true }, { multi: false });
         }
       });
-      */
     });
     goodbye(() => swarm.destroy());
     await swarm.join(b4a.alloc(32).fill(options.folderName), { server: true, client: true });
     await swarm.flush();
   }
   else { // ---------------------------------------------------------------- client
-    // hd.eventHandler = options.eventHandler;
+    hd.eventHandler = options.eventHandler;
     base = new Autobase({
       inputs: [input],
       localInput: input,
       localOutput: output
     });
+    /*
     base.start({
       unwrap: true,
       apply: async function applyAutobeeBatch (bee, batch) {
@@ -217,6 +186,7 @@ async function hyperdown(options) {
       })
     });
     hd.bee = base.view;
+    */
     await base.ready();
     const manager = new AutobaseManager(
       base,
@@ -226,16 +196,15 @@ async function hyperdown(options) {
       { id: options.folderName } // Options
     );
     await manager.ready();
-    // const autobee = new Autodeebee(eventsbase);
-    // hd.db = new DB(autobee);
-    // let server;
+    const autobee = new Autodeebee(eventsbase);
+    hd.db = new DB(autobee);
+    let server;
     swarm = new Hyperswarm({
       keyPair: keyPair
     });
     swarm.on('connection', async function(socket) {
       const stream = store.replicate(socket);
       manager.attachStream(stream); // Attach manager
-      /*
       const rpc = new ProtomuxRPC(socket);
       rpc.remotePublicKey = socket.remotePublicKey;
       rpc.respond('isServer', function() {
@@ -265,17 +234,16 @@ async function hyperdown(options) {
           });
         }
       });
-      */
     });
     goodbye(async function() {
-      // await hd.db.collection('events').update({ _id: keyPair.publicKey }, { offline: true }, { multi: false });
+      await hd.db.collection('events').update({ _id: keyPair.publicKey }, { offline: true }, { multi: false });
       swarm.destroy();
     });
     await swarm.join(b4a.alloc(32).fill(options.folderName), { server: true, client: true });
     await swarm.flush();
     // when the server is ready to talk ...
-    /*
     async function hasServer(rpc) {
+      console.log('has server');
       server = rpc;
       rpc.on('close', function() {
         server = undefined;
@@ -312,8 +280,8 @@ async function hyperdown(options) {
         })(0, this);
       }
     }
-    */
   }
+  /*
   hd.put = async function(key, value) {
     const op = b4a.from(JSON.stringify({ type: 'put', key, value: JSON.stringify(value) }));
     return await base.append(op);
@@ -323,6 +291,7 @@ async function hyperdown(options) {
     key = await hd.bee.get(key);
     return JSON.parse(key.value.toString());
   };
+  */
   return hd;
 };
 module.exports = hyperdown;
