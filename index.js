@@ -315,7 +315,7 @@ async function hyperdown(options) {
     */
   }
   hd.put = async function(key, value) {
-    const op = b4a.from(JSON.stringify({ type: 'put', key, value }));
+    const op = b4a.from(JSON.stringify({ type: 'put', key, JSON.stringify(value) }));
     return await base.append(op);
   };
   hd.get = async function(key) {
