@@ -118,6 +118,9 @@ async function hyperdown(options) {
       }
     };
     hd.addEvent = async function(userPublicKey, data) {
+      if (typeof userPublicKey.toString == 'function') {
+        userPublicKey = userPublicKey.toString('hex');
+      }
       const hyperdownId = id.of(+new Date());
       const user = await hd.db.collection('events').findOne(userPublicKey);
       console.log('test', 'addEvent', userPublicKey, data, user);
