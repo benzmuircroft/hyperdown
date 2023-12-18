@@ -10,11 +10,10 @@
   "dependencies": {
     "@lejeunerenard/autobase-manager": "github:lejeunerenard/autobase-manager#1.2.0",
     "autobase": "github:holepunchto/autobase#v1.0.0-alpha.9",
-    "autodbee": "github:benzmuircroft/autodbee",
     "hyperbee": "github:holepunchto/hyperbee#cas-prev-null",
     "corestore": "^6.15.13",
     "hyperswarm": "^4.7.13",
-    "protomux-rpc": "^1.5.1",
+    "hyperdht": "6.11.2",
     "keypear": "^1.2.0",
     "b4a": "^1.6.0",
     "graceful-goodbye": "^1.2.1"
