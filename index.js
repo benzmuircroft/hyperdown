@@ -19,6 +19,9 @@ async function hyperdown(options) {
   else if (!options.uniqueKeyPair) {
     throw new Error('options.uniqueKeyPair should be a KeyChain or keyPair. see: https://github.com/holepunchto/keypear');
   }
+  else if (!options.isServer && (!options.serverPublicKey || typeof options.serverPublicKey !== 'string')) {
+    throw new Error('options.serverPublicKey should be a string');
+  }
   else if (!options.folderName || typeof options.folderName !== 'string') {
     throw new Error('options.folderName should be a string');
   }
@@ -199,7 +202,6 @@ async function hyperdown(options) {
   }
   else { // ---------------------------------------------------------------- client
     hd.eventHandler = options.eventHandler;
-    let server;
     swarm = new Hyperswarm();
     const publicKey = keyPair.publicKey.toString('hex');
     swarm.on('connection', async function(socket) {
@@ -213,7 +215,7 @@ async function hyperdown(options) {
     await swarm.join(b4a.alloc(32).fill(options.folderName), { server: true, client: true });
     await swarm.flush();
     const node = new DHT();
-    const server = node.connect(options.severPublicKey,{ keyPair });
+    const server = node.connect(options.serverPublicKey,{ keyPair });
     server.on('open', function(socket) {
       socket.on('data', async function(d) {
         d = JSON.parse(d);
@@ -240,9 +242,7 @@ async function hyperdown(options) {
               }
               else { //end
                 next = null;
-                if (server) {
-                  socket.write('consumedEvents');
-                }
+                socket.write('consumedEvents');
               }
             })(0);
           }
