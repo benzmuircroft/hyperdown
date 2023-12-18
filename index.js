@@ -180,7 +180,7 @@ async function hyperdown(options) {
           // todo: store events because the client isn't ready ...
           // send welcome ? no client should start after ready somehow change behavour with return ...
         }
-        else if (d.f == 'consumedEvents') {
+        else if (d.f == 'consumedEvents') { // ...................... does not happen ...
           delete d.f;
           console.log('rec', socket.hexPublicKey);
           let ev = await hd.get(`${socket.hexPublicKey}-ev`);
@@ -235,7 +235,7 @@ async function hyperdown(options) {
         console.log(d);
         if (d.f == 'welcome') {
           delete d.f;
-          console.log('welcome', publicKey, d.ev);
+          console.log('welcome', publicKey, d.ev); // ............................ happens !!
           await hd.put(`${publicKey}-ox`, 'o');
           hd.events = JSON.parse(JSON.stringify(d.ev));
           if (hd.events.length) {
@@ -257,7 +257,7 @@ async function hyperdown(options) {
               }
               else { //end
                 next = null;
-                client.write(JSON.stringify({ f: 'consumedEvents' }));
+                client.write(JSON.stringify({ f: 'consumedEvents' })); // ................ does not happen !?
               }
             })(0);
           }
