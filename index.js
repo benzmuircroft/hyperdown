@@ -95,8 +95,8 @@ async function hyperdown(options) {
   };
   hd.batch = async function(array) {
     const batch = base.view.batch();
-    for await (let i = 0; i< array.length; i += 1) {
-      await batch.put(array[i][0], array[i][1]);
+    for await (part of array) {
+      await batch.put(part[0], part[1]);
     }
     await batch.flush();
   };
