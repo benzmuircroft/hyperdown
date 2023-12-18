@@ -165,7 +165,7 @@ async function hyperdown(options) {
     await swarm.flush();
     const node = new DHT();
     const server = node.createServer();
-    server.on('connection', function (socket) {
+    server.on('connection', async function(socket) {
       socket.hexPublicKey = socket.remotePublicKey.toString('hex');
       clients[socket.hexPublicKey] = socket;
       socket.on('data', async function() { // always from consumedEvents
@@ -214,7 +214,7 @@ async function hyperdown(options) {
     await swarm.flush();
     const node = new DHT();
     const server = node.connect(options.severPublicKey,{ keyPair });
-    server.on('open', function (socket) {
+    server.on('open', function(socket) {
       socket.on('data', async function(d) {
         d = JSON.parse(d);
         if (d.f == 'welcome') {
