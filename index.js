@@ -174,21 +174,27 @@ async function hyperdown(options) {
       console.log(socket.hexPublicKey);
       clients[socket.hexPublicKey] = socket;
       await hd.put(`${socket.hexPublicKey}-ox`, 'o');
-      socket.on('data', async function() { // always from consumedEvents
-        let ev = await hd.get(`${socket.hexPublicKey}-ev`);
-        let ex = await hd.get(`${socket.hexPublicKey}-ex`);
-        let consumedEvents = [];
-        for (const hyperdownId in ev) {
-          if (ex.includes(hyperdownId)) {
-            consumedEvents.push(JSON.parse(JSON.stringify(ev[hyperdownId])));
-            delete ev[hyperdownId];
-          }
+      socket.on('data', async function(d) {
+        if (d.f == 'ready') {
+          // todo: store events because the client isn't ready ...
+          // send welcome ? no client should start after ready somehow change behavour with return ...
         }
-        hd.batch([
-          [ `${socket.hexPublicKey}-ev`, ev ],
-          [ `${socket.hexPublicKey}-ex`, ex ]
-        ]);
-        hd.onClientConsumedEvents(socket.hexPublicKey, consumedEvents); // application can handle anything it needs to ....
+        else if (d.f == 'consumedEvents') {
+          let ev = await hd.get(`${socket.hexPublicKey}-ev`);
+          let ex = await hd.get(`${socket.hexPublicKey}-ex`);
+          let consumedEvents = [];
+          for (const hyperdownId in ev) {
+            if (ex.includes(hyperdownId)) {
+              consumedEvents.push(JSON.parse(JSON.stringify(ev[hyperdownId])));
+              delete ev[hyperdownId];
+            }
+          }
+          hd.batch([
+            [ `${socket.hexPublicKey}-ev`, ev ],
+            [ `${socket.hexPublicKey}-ex`, ex ]
+          ]);
+          hd.onClientConsumedEvents(socket.hexPublicKey, consumedEvents); // application can handle anything it needs to .... 
+        }
       });
       socket.on('close', async function() {
         console.log(socket.hexPublicKey, 'close');
