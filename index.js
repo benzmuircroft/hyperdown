@@ -65,7 +65,7 @@ async function hyperdown(options) {
   });
   base.start({
     unwrap: true,
-    apply: async function applyAutobeeBatch (bee, batch) {
+    apply: async function(bee, batch) {
       const b = bee.batch({ update: false });
       for (const node of batch) {
         const op = JSON.parse(node.value.toString());
