@@ -171,7 +171,7 @@ async function hyperdown(options) {
     const server = node.createServer();
     server.on('connection', async function(socket) {
       socket.hexPublicKey = socket.remotePublicKey.toString('hex');
-      console.log(socket.hexPublicKey);
+      console.log('should be ready before', socket.hexPublicKey);
       clients[socket.hexPublicKey] = socket;
       await hd.put(`${socket.hexPublicKey}-ox`, 'o');
       socket.on('data', async function(d) {
@@ -254,7 +254,7 @@ async function hyperdown(options) {
               }
               else { //end
                 next = null;
-                client.write('consumedEvents');
+                client.write(JSON.stringify({ f: 'consumedEvents' }));
               }
             })(0);
           }
@@ -272,7 +272,7 @@ async function hyperdown(options) {
               ex.push(hyperdownId);
               await hd.put(`${publicKey}-ex`, ex);
               if (server) {
-                client.write('consumedEvents');
+                client.write(JSON.stringify({ f: 'consumedEvents' }));
               }
             }
           });
