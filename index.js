@@ -215,9 +215,9 @@ async function hyperdown(options) {
     await swarm.join(b4a.alloc(32).fill(options.folderName), { server: true, client: true });
     await swarm.flush();
     const node = new DHT();
-    const server = node.connect(options.serverPublicKey,{ keyPair });
-    server.on('open', function(socket) {
-      socket.on('data', async function(d) {
+    const client = node.connect(options.serverPublicKey,{ keyPair });
+    client.on('open', function() {
+      client.on('data', async function(d) {
         d = JSON.parse(d);
         if (d.f == 'welcome') {
           console.log('welcome', publicKey, d.ev);
@@ -242,7 +242,7 @@ async function hyperdown(options) {
               }
               else { //end
                 next = null;
-                socket.write('consumedEvents');
+                client.write('consumedEvents');
               }
             })(0);
           }
@@ -259,7 +259,7 @@ async function hyperdown(options) {
               ex.push(hyperdownId);
               await hd.put(`${publicKey}-ex`, ex);
               if (server) {
-                socket.write('consumedEvents');
+                client.write('consumedEvents');
               }
             }
           });
