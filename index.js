@@ -183,7 +183,7 @@ async function hyperdown(options) {
           [ `${socket.hexPublicKey}-ex`, ex ]
         ]);
         hd.onClientConsumedEvents(socket.hexPublicKey, consumedEvents); // application can handle anything it needs to ....
-      };
+      });
       socket.on('close', async function() {
         delete clients[socket.hexPublicKey];
         if ((await hd.get(`${socket.hexPublicKey}-ox`)) == 'o') {
