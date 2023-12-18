@@ -84,22 +84,23 @@ async function hyperdown(options) {
     { id: options.folderName } // Options
   );
   await manager.ready();
-  hd.put = async function(key, value) {
-    const op = b4a.from(JSON.stringify({ type: 'put', key, value: JSON.stringify(value) }));
-    return await base.append(op);
-  };
   hd.get = async function(key) {
     await base.view.update();
     key = await base.view.get(key);
     if (!key) return key; 
     return JSON.parse(key.value.toString());
   };
+  hd.put = async function(key, value) {
+    const op = b4a.from(JSON.stringify({ type: 'put', key, value: JSON.stringify(value) }));
+    return await base.append(op);
+  };
   hd.batch = async function(array) {
-    const batch = base.view.batch();
-    for await (part of array) {
-      await batch.put(part[0], part[1]);
+    let op = [];
+    for (part of array) {
+      op.push({ type: 'put', key: part[0], value: (typeof part[1] == 'string' ? part[1] : JSON.stringify(part[1])) });
     }
-    await batch.flush();
+    op = b4a.from(JSON.stringify(op));
+    return await base.append(op);
   };
 
   if (options.isServer) { // --------------------------------------- server
