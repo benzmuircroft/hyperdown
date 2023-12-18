@@ -66,9 +66,14 @@ async function hyperdown(options) {
       const b = bee.batch({ update: false });
       for (const node of batch) {
         const op = JSON.parse(node.value.toString());
-        console.log(op);
         if (op.type === 'del') await b.del(op.key);
         else if (op.type === 'put') await b.put(op.key, op.value.toString());
+        else { // batch
+          for (el of op) {
+            if (el.type === 'del') await b.del(el.key);
+            else if (el.type === 'put') await b.put(el.key, el.value.toString());
+          }
+        }
       }
       await b.flush();
     },
@@ -86,10 +91,12 @@ async function hyperdown(options) {
   );
   await manager.ready();
   hd.get = async function(key) {
-    await base.view.update();
+    await base.view.update({ wait: true });
     key = await base.view.get(key);
-    if (!key) return key; 
-    return JSON.parse(key.value.toString());
+    if (!key) return key;
+    key.value = key.value.toString();
+    if (['[', '{'].includes(key.value[0])) return JSON.parse(key.value);
+    return key.value;
   };
   hd.put = async function(key, value) {
     const op = b4a.from(JSON.stringify({ type: 'put', key, value: JSON.stringify(value) }));
@@ -137,32 +144,36 @@ async function hyperdown(options) {
         userPublicKey = userPublicKey.toString('hex');
       }
       const hyperdownId = id.of(+new Date());
-      let ev = await hd.get(`${userPublicKey}-ev`);
+      let ev = await hd.get(`${userPublicKey}-ev`) || {};
       data.hyperdownId = hyperdownId;
       ev[hyperdownId] = data;
       await hd.put(`${userPublicKey}-ev`, ev);
-      if (!user.offline && clients[userPublicKey]) {
+      console.log(1, userPublicKey, await hd.get(`${userPublicKey}-ev`));
+      const ox = await hd.get(`${userPublicKey}-ox`);
+      if (ox && ox != 'x' && clients[userPublicKey]) {
         clients[userPublicKey].event('event', b4a.from(JSON.stringify(data)));
       }
     };
     swarm = new Hyperswarm({
-      keyPair: keyPair
+      //keyPair: keyPair
     });
     const clients = {};
     swarm.on('connection', function(socket) {
       const stream = store.replicate(socket);
       manager.attachStream(stream); // Attach manager
+      /*
       const rpc = new ProtomuxRPC(socket);
       rpc.remotePublicKey = socket.remotePublicKey.toString('hex');
       clients[rpc.remotePublicKey] = rpc;
-      rpc.event('isServer'); // tell the client you are the server ...
+      console.log('server: ',rpc.remotePublicKey + ' joined');
+      rpc.event('isServer', b4a.from(rpc.remotePublicKey)); // tell the client you are the server ...
       rpc.respond('consumedEvents', async function(data) {
         let ev = await hd.get(`${rpc.remotePublicKey}-ev`);
         let ex = await hd.get(`${rpc.remotePublicKey}-ex`);
         let consumedEvents = [];
         for (const hyperdownId in ev) {
           if (ex.includes(hyperdownId)) {
-            consumedEvents.push(JSON.stringify(JSON.parse(ev[hyperdownId])));
+            consumedEvents.push(JSON.parse(JSON.stringify(ev[hyperdownId])));
             delete ev[hyperdownId];
           }
         }
@@ -178,25 +189,37 @@ async function hyperdown(options) {
           await hd.put(`${rpc.remotePublicKey}-ox`, 'x');
         }
       });
+      */
     });
     goodbye(() => swarm.destroy());
     await swarm.join(b4a.alloc(32).fill(options.folderName), { server: true, client: true });
     await swarm.flush();
+    
+
+    
   }
   else { // ---------------------------------------------------------------- client
     hd.eventHandler = options.eventHandler;
     let server;
     swarm = new Hyperswarm({
-      keyPair: keyPair
+      // keyPair: keyPair
     });
     const publicKey = keyPair.publicKey.toString('hex');
+
+
+    
+
+
+
     swarm.on('connection', async function(socket) {
       const stream = store.replicate(socket);
       manager.attachStream(stream); // Attach manager
+      /*
       const rpc = new ProtomuxRPC(socket);
       rpc.remotePublicKey = socket.remotePublicKey;
-      rpc.respond('isServer', function() {
-        hasServer(rpc); // server is ready to talk !
+      rpc.respond('isServer', function(to) {
+        console.log(publicKey, typeof server);
+        if (!server && to == publicKey) hasServer(rpc); // server is ready to talk !
       });
       rpc.respond('event', async function(data) {
         let e;
@@ -224,6 +247,7 @@ async function hyperdown(options) {
           });
         }
       });
+      */
     });
     goodbye(async function() {
       await hd.put(`${publicKey}-ox`, 'x');
@@ -237,39 +261,41 @@ async function hyperdown(options) {
       rpc.on('close', function() {
         server = undefined;
       });
-      if (!await hd.get(`${publicKey}-ox`)) {
-        /*await hd.batch([
+      //console.log(publicKey, 'sleeping ...');
+      //const sleep = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));
+      //await sleep(60000);
+      //console.log(publicKey, 'sleep over ...');
+      let found = await hd.get(`${publicKey}-ev`);
+      console.log('isServer', publicKey, found);
+      if (!found) {
+        console.log(publicKey, 'make');
+        found = {};
+        await hd.batch([
           [ `${publicKey}-ox`, 'o' ],
           [ `${publicKey}-ev`, {} ],
           [ `${publicKey}-ex`, [] ]
-        ]);*/
-        await hd.put(`${publicKey}-ox`, 'o');
-        await hd.put(`${publicKey}-ev`, {});
-        await hd.put(`${publicKey}-ex`, []);
+        ]);
       }
       else {
         await hd.put(`${publicKey}-ox`, 'o');
       }
       // look up our events and consume them ...
-      let found = await hd.get(`${publicKey}-ev`);
-
-      console.log(await hd.get(`${publicKey}-ox`), await hd.get(`${publicKey}-ev`), await hd.get(`${publicKey}-ex`));
-      
       hd.events = JSON.parse(JSON.stringify(found));
       if (hd.events.length) {
         let hyperdownId = Object.keys(found);
-        ;(async function next(s, that) {
+        ;(async function next(s,) {
           if (found[hyperdownId[s]]) {
-            that.eventHandler(hyperdownId[s], found[hyperdownId[s]], async function(id, bool) { // callback result
+            hd.eventHandler(hyperdownId[s], found[hyperdownId[s]], async function(id, bool) { // callback result
               if (id !== hyperdownId[s]) {
                 throw new Error(`Malformed hyperdownId for event. Got: '${id}', expected: '${hyperdownId[s]}'`);
               }
               if (bool) { // true
                 let ex = await hd.get(`${publicKey}-ex`);
+                console.log(typeof ex, ex, '??');
                 ex.push(hyperdownId[s]);
                 await hd.put(`${publicKey}-ex`, ex);
               }
-              await next(s + 1, that);
+              await next(s + 1);
             });
           }
           else { //end
@@ -278,7 +304,7 @@ async function hyperdown(options) {
               server.event('consumedEvents');
             }
           }
-        })(0, this);
+        })(0);
       }
     }
   }
