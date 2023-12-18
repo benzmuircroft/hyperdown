@@ -51,8 +51,8 @@ async function hyperdown(options) {
   }
   
   const store = new Corestore(folder);
-  const input = store.get({ name: 'input', sparse: false/*, valueEncoding: 'json'*/ });
-  const output = store.get({ name: 'output', sparse: false/*, valueEncoding: 'json'*/ });
+  const input = store.get({ name: 'input', sparse: false });
+  const output = store.get({ name: 'output', sparse: false });
   await input.ready();
   await output.ready();
   base = new Autobase({
