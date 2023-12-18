@@ -95,10 +95,8 @@ async function hyperdown(options) {
     return await base.append(op);
   };
   hd.batch = async function(array) {
-    console.log(array);
     let op = [];
     for (let i = 0; i < array.length; i += 1) {
-      console.log(array[i]);
       op.push({ type: 'put', key: array[i][0], value: (typeof array[i][1] == 'string' ? array[i][1] : JSON.stringify(array[i][1])) });
     }
     op = b4a.from(JSON.stringify(op));
@@ -250,6 +248,9 @@ async function hyperdown(options) {
       }
       // look up our events and consume them ...
       let found = await hd.get(`${publicKey}-ev`);
+
+      console.log(await hd.get(`${publicKey}-ox`), await hd.get(`${publicKey}-ev`), await hd.get(`${publicKey}-ex`));
+      
       hd.events = JSON.parse(JSON.stringify(found));
       if (hd.events.length) {
         let hyperdownId = Object.keys(found);
