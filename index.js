@@ -66,6 +66,7 @@ async function hyperdown(options) {
       const b = bee.batch({ update: false });
       for (const node of batch) {
         const op = JSON.parse(node.value.toString());
+        console.log(op);
         if (op.type === 'del') await b.del(op.key);
         else if (op.type === 'put') await b.put(op.key, op.value.toString());
       }
