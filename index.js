@@ -167,7 +167,10 @@ async function hyperdown(options) {
             delete ev[hyperdownId];
           }
         }
-        hd.batch([[`${rpc.remotePublicKey}-ev`, ev], [`${rpc.remotePublicKey}-ex`, ex]]);
+        hd.batch([
+          [ `${rpc.remotePublicKey}-ev`, ev ],
+          [ `${rpc.remotePublicKey}-ex`, ex ]
+        ]);
         hd.onClientConsumedEvents(rpc.remotePublicKey, consumedEvents); // application can handle anything it needs to ....
       });
       rpc.on('close', async function() {
