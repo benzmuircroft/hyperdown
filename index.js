@@ -282,6 +282,7 @@ async function hyperdown(options) {
         }
       });
     });
+    // when ready .................................... ??? return
   }
   return hd;
 };
