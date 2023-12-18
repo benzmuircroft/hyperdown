@@ -4,6 +4,7 @@ async function hyperdown(options) {
   const Corestore = require('corestore');
   const Autobase = require('autobase');
   const AutobaseManager = (await import('@lejeunerenard/autobase-manager')).AutobaseManager;
+  const Hyperbee = require('hyperbee');
   const Autodeebee = require('autodbee/autodeebee');
   const { DB } = require('autodbee');
   const Hyperswarm = require('hyperswarm');
@@ -12,7 +13,7 @@ async function hyperdown(options) {
   const b4a = require('b4a');
   const goodbye = (await import('graceful-goodbye')).default;
 
-  let base, swarm, keyPair;
+  let swarm, keyPair;
 
   if (!options) {
     throw new Error('options object is missing');
@@ -50,16 +51,10 @@ async function hyperdown(options) {
   if (options.testFolder) {
     folder += `/${options.testFolder}`;
   }
-
-
-
-  
-
-
   
   const store = new Corestore(folder);
-  const input = store.get({ name: 'input', sparse: false, valueEncoding: 'json' });
-  const output = store.get({ name: 'output', sparse: false, valueEncoding: 'json' });
+  const input = store.get({ name: 'input', sparse: false/*, valueEncoding: 'json'*/ });
+  const output = store.get({ name: 'output', sparse: false/*, valueEncoding: 'json'*/ });
   await input.ready();
   await output.ready();
 
@@ -70,6 +65,25 @@ async function hyperdown(options) {
       localInput: input,
       localOutput: output
     });
+    /*
+    base.start({
+      unwrap: true,
+      apply: async function applyAutobeeBatch (bee, batch) {
+        const b = bee.batch({ update: false });
+        for (const node of batch) {
+          const op = JSON.parse(node.value.toString());
+          // TODO: Handle deletions
+          if (op.type === 'put') await b.put(op.key, op.value.toString());
+        }
+        await b.flush();
+      },
+      view: core => new Hyperbee(core.unwrap(), {
+        extension: false
+      })
+    });
+    hd.bee = base.view;
+    */
+    await base.ready();
     const manager = new AutobaseManager(
       base,
       (key, coreType, channel) => true, // function to filter core keys
@@ -78,7 +92,7 @@ async function hyperdown(options) {
       { id: options.folderName } // Options
     );
     await manager.ready();
-    const autobee = new Autodeebee(eventsbase);
+    const autobee = new Autodeebee(base);
     hd.db = new DB(autobee);
     const id = {
       cy:
@@ -104,9 +118,15 @@ async function hyperdown(options) {
       }
     };
     hd.addEvent = async function(userPublicKey, data) {
+      if (typeof data !== 'object') {
+        throw new Error('data needs to be an object');
+      }
+      if (typeof userPublicKey.toString == 'function') {
+        userPublicKey = userPublicKey.toString('hex');
+      }
       const hyperdownId = id.of(+new Date());
       const user = await hd.db.collection('events').findOne(userPublicKey);
-      let events = user.events;
+      let events = user.events || {};
       data.hyperdownId = hyperdownId;
       events[hyperdownId] = data;
       await hd.db.collection('events').update({ _id: userPublicKey }, { events: events }, { multi: false, upsert: true });
@@ -122,7 +142,7 @@ async function hyperdown(options) {
       const stream = store.replicate(socket);
       manager.attachStream(stream); // Attach manager
       const rpc = new ProtomuxRPC(socket);
-      rpc.remotePublicKey = socket.remotePublicKey;
+      rpc.remotePublicKey = socket.remotePublicKey.toString('hex');
       clients[rpc.remotePublicKey] = rpc;
       rpc.event('isServer'); // tell the client you are the server ...
       rpc.respond('consumedEvents', async function(data) {
@@ -155,6 +175,25 @@ async function hyperdown(options) {
       localInput: input,
       localOutput: output
     });
+    /*
+    base.start({
+      unwrap: true,
+      apply: async function applyAutobeeBatch (bee, batch) {
+        const b = bee.batch({ update: false });
+        for (const node of batch) {
+          const op = JSON.parse(node.value.toString());
+          // TODO: Handle deletions
+          if (op.type === 'put') await b.put(op.key, op.value.toString());
+        }
+        await b.flush();
+      },
+      view: core => new Hyperbee(core.unwrap(), {
+        extension: false
+      })
+    });
+    hd.bee = base.view;
+    */
+    await base.ready();
     const manager = new AutobaseManager(
       base,
       (key, coreType, channel) => true, // function to filter core keys
@@ -163,12 +202,13 @@ async function hyperdown(options) {
       { id: options.folderName } // Options
     );
     await manager.ready();
-    const autobee = new Autodeebee(eventsbase);
+    const autobee = new Autodeebee(base);
     hd.db = new DB(autobee);
     let server;
     swarm = new Hyperswarm({
       keyPair: keyPair
     });
+    const publicKey = keyPair.publicKey.toString('hex');
     swarm.on('connection', async function(socket) {
       const stream = store.replicate(socket);
       manager.attachStream(stream); // Attach manager
@@ -193,7 +233,7 @@ async function hyperdown(options) {
               throw new Error(`Malformed hyperdownId for event. Got: '${id}', expected: '${hyperdownId}'`);
             }
             if (bool) { // true
-              await hd.db.collection('events').update({ _id: keyPair.publicKey }, { $push: { consumed: hyperdownId } }, { multi: false, upsert: true });
+              await hd.db.collection('events').update({ _id: publicKey }, { $push: { consumed: hyperdownId } }, { multi: false, upsert: true });
               if (server) {
                 server.event('consumedEvents');
               }
@@ -203,7 +243,7 @@ async function hyperdown(options) {
       });
     });
     goodbye(async function() {
-      await hd.db.collection('events').update({ _id: keyPair.publicKey }, { offline: true }, { multi: false });
+      await hd.db.collection('events').update({ _id: publicKey }, { offline: true }, { multi: false });
       swarm.destroy();
     });
     await swarm.join(b4a.alloc(32).fill(options.folderName), { server: true, client: true });
@@ -214,15 +254,15 @@ async function hyperdown(options) {
       rpc.on('close', function() {
         server = undefined;
       });
-      if (!await hd.db.collection('events').findOne(keyPair.publicKey)) {
-        await hd.db.collection('events').insert({ _id: keyPair.publicKey, offline: false, events: {} });
+      if (!await hd.db.collection('events').findOne(publicKey)) {
+        await hd.db.collection('events').insert({ _id: publicKey, offline: false, events: {} });
       }
       else {
-        await hd.db.collection('events').update({ _id: keyPair.publicKey }, { offline: false }, { multi: false });
+        await hd.db.collection('events').update({ _id: publicKey }, { offline: false }, { multi: false });
       }
       // look up our events and consume them ...
-      let found = (await hd.db.collection('events').findOne({ _id: keyPair.publicKey })).events;
-      hd.events = JSON.stringify(JSON.parse(found));
+      let found = (await hd.db.collection('events').findOne({ _id: publicKey })).events;
+      hd.events = JSON.parse(JSON.stringify(found));
       if (hd.events.length) {
         let hyperdownId = Object.keys(found);
         ;(async function next(s, that) {
@@ -232,7 +272,7 @@ async function hyperdown(options) {
                 throw new Error(`Malformed hyperdownId for event. Got: '${id}', expected: '${hyperdownId[s]}'`);
               }
               if (bool) { // true
-                await hd.db.collection('events').update({ _id: keyPair.publicKey }, { $push: { consumed: hyperdownId[s] } }, { multi: false, upsert: true });
+                await hd.db.collection('events').update({ _id: publicKey }, { $push: { consumed: hyperdownId[s] } }, { multi: false, upsert: true });
               }
               await next(s + 1, that);
             });
@@ -247,6 +287,17 @@ async function hyperdown(options) {
       }
     }
   }
+  /*
+  hd.put = async function(key, value) {
+    const op = b4a.from(JSON.stringify({ type: 'put', key, value: JSON.stringify(value) }));
+    return await base.append(op);
+  };
+  hd.get = async function(key) {
+    await base.view.update();
+    key = await hd.bee.get(key);
+    return JSON.parse(key.value.toString());
+  };
+  */
   return hd;
 };
 module.exports = hyperdown;
