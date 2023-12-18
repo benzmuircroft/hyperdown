@@ -19,8 +19,8 @@ async function hyperdown(options) {
   else if (!options.uniqueKeyPair) {
     throw new Error('options.uniqueKeyPair should be a KeyChain or keyPair. see: https://github.com/holepunchto/keypear');
   }
-  else if (!options.isServer && (!options.serverPublicKey || typeof options.serverPublicKey !== 'string')) {
-    throw new Error('options.serverPublicKey should be a string');
+  else if (!options.isServer && !options.serverPublicKey) {
+    throw new Error('options.serverPublicKey should be a TypedArray');
   }
   else if (!options.folderName || typeof options.folderName !== 'string') {
     throw new Error('options.folderName should be a string');
