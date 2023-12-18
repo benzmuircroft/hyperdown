@@ -139,8 +139,8 @@ async function hyperdown(options) {
         return e;
       }
     };
-    hd.addEvent = async function(userPublicKey, data) {
-      if (typeof data !== 'object') {
+    hd.addEvent = async function(userPublicKey, d) {
+      if (typeof d !== 'object') {
         throw new Error('data needs to be an object');
       }
       if (typeof userPublicKey.toString == 'function') {
@@ -148,13 +148,14 @@ async function hyperdown(options) {
       }
       const hyperdownId = id.of(+new Date());
       let ev = await hd.get(`${userPublicKey}-ev`) || {};
-      data.hyperdownId = hyperdownId;
-      ev[hyperdownId] = data;
+      d.hyperdownId = hyperdownId;
+      ev[hyperdownId] = d;
       await hd.put(`${userPublicKey}-ev`, ev);
       console.log(1, userPublicKey, await hd.get(`${userPublicKey}-ev`));
       const ox = await hd.get(`${userPublicKey}-ox`);
       if (ox && ox != 'x' && clients[userPublicKey]) {
-        clients[userPublicKey].event('event', b4a.from(JSON.stringify(data)));
+        d.f = 'event';
+        clients[userPublicKey].write(JSON.stringify(d));
       }
     };
     swarm = new Hyperswarm();
@@ -220,6 +221,7 @@ async function hyperdown(options) {
       client.on('data', async function(d) {
         d = JSON.parse(d);
         if (d.f == 'welcome') {
+          delete d.f;
           console.log('welcome', publicKey, d.ev);
           await hd.put(`${publicKey}-ox`, 'o');
           hd.events = JSON.parse(JSON.stringify(d.ev));
@@ -248,6 +250,7 @@ async function hyperdown(options) {
           }
         }
         else if (d.f == 'event') {
+          delete d.f;
           const hyperdownId = d.hyperdownId + '';
           delete d.hyperdownId;
           hd.eventHandler(hyperdownId, d, async function(id, bool) { // call back
