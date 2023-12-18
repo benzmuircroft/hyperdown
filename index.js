@@ -171,7 +171,9 @@ async function hyperdown(options) {
     const server = node.createServer();
     server.on('connection', async function(socket) {
       socket.hexPublicKey = socket.remotePublicKey.toString('hex');
+      console.log(socket.hexPublicKey);
       clients[socket.hexPublicKey] = socket;
+      await hd.put(`${socket.hexPublicKey}-ox`, 'o');
       socket.on('data', async function() { // always from consumedEvents
         let ev = await hd.get(`${socket.hexPublicKey}-ev`);
         let ex = await hd.get(`${socket.hexPublicKey}-ex`);
@@ -189,6 +191,7 @@ async function hyperdown(options) {
         hd.onClientConsumedEvents(socket.hexPublicKey, consumedEvents); // application can handle anything it needs to ....
       });
       socket.on('close', async function() {
+        console.log(socket.hexPublicKey, 'close');
         delete clients[socket.hexPublicKey];
         if ((await hd.get(`${socket.hexPublicKey}-ox`)) == 'o') {
           await hd.put(`${socket.hexPublicKey}-ox`, 'x');
