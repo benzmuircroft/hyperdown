@@ -176,10 +176,13 @@ async function hyperdown(options) {
       await hd.put(`${socket.hexPublicKey}-ox`, 'o');
       socket.on('data', async function(d) {
         if (d.f == 'ready') {
+          delete d.f;
           // todo: store events because the client isn't ready ...
           // send welcome ? no client should start after ready somehow change behavour with return ...
         }
         else if (d.f == 'consumedEvents') {
+          delete d.f;
+          console.log('rec', socket.hexPublicKey);
           let ev = await hd.get(`${socket.hexPublicKey}-ev`);
           let ex = await hd.get(`${socket.hexPublicKey}-ex`);
           let consumedEvents = [];
