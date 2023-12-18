@@ -151,8 +151,8 @@ async function hyperdown(options) {
       d.hyperdownId = hyperdownId;
       ev[hyperdownId] = d;
       await hd.put(`${userPublicKey}-ev`, ev);
-      console.log(1, userPublicKey, await hd.get(`${userPublicKey}-ev`));
       const ox = await hd.get(`${userPublicKey}-ox`);
+      console.log(1, userPublicKey, await hd.get(`${userPublicKey}-ev`), ox, typeof clients[userPublicKey]);
       if (ox && ox != 'x' && clients[userPublicKey]) {
         d.f = 'event';
         clients[userPublicKey].write(JSON.stringify(d));
@@ -220,6 +220,7 @@ async function hyperdown(options) {
     client.on('open', function() {
       client.on('data', async function(d) {
         d = JSON.parse(d);
+        console.log(d);
         if (d.f == 'welcome') {
           delete d.f;
           console.log('welcome', publicKey, d.ev);
