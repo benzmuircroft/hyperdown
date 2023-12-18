@@ -96,7 +96,7 @@ async function hyperdown(options) {
   };
   hd.batch = async function(array) {
     let op = [];
-    for (part of array) {
+    for (let part of array) {
       op.push({ type: 'put', key: part[0], value: (typeof part[1] == 'string' ? part[1] : JSON.stringify(part[1])) });
     }
     op = b4a.from(JSON.stringify(op));
