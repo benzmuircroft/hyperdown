@@ -91,6 +91,7 @@ async function hyperdown(options) {
   hd.get = async function(key) {
     await base.view.update();
     key = await base.view.get(key);
+    if (!key) return key; 
     return JSON.parse(key.value.toString());
   };
   hd.batch = async function(array) {
