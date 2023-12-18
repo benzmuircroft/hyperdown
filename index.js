@@ -236,7 +236,11 @@ async function hyperdown(options) {
         server = undefined;
       });
       if (!await hd.get(`${publicKey}-ox`)) {
-        await hd.batch([[`${publicKey}-ox`, 'o'], [`${publicKey}-ev`, {}] [`${publicKey}-ex`, []]]);
+        await hd.batch([
+          [ `${publicKey}-ox`, 'o' ],
+          [ `${publicKey}-ev`, {} ],
+          [ `${publicKey}-ex`, [] ]
+        ]);
       }
       else {
         await hd.put(`${publicKey}-ox`, 'o');
