@@ -289,6 +289,7 @@ const hyperdown = async (options) => { // self-invoking function
 
 module.exports = hyperdown;
 
-// todo: test in day time
-// - add dht bootstraps
+// todo: test in day time (seams really slow in the day and fast at night, hence the timout that is above on line 258)
+// - add dht bootstraps (faster?)
 // - add truncating
+// - ask about adding sub and how that would work with autobase apply
