@@ -1,8 +1,6 @@
 const hyperdown = async (options) => { // self-invoking function
   return new Promise(async (resolve) => {
     const hd = {};
-    const RAM = require('random-access-memory');
-    const Hypercore = require('hypercore');
     const Corestore = require('corestore');
     const Autobase = require('autobase');
     const AutobaseManager = (await import('@lejeunerenard/autobase-manager')).AutobaseManager;
@@ -86,7 +84,8 @@ const hyperdown = async (options) => { // self-invoking function
       base,
       (key, coreType, channel) => true, // function to filter core keys
       store.get.bind(store), // get(key) function to get a hypercore given a key
-      new Hypercore(RAM) // Storage for managing autobase keys
+      store.storage, // Storage for managing autobase keys
+      { id: options.folderName } // Options
     );
     await manager.ready();
 
