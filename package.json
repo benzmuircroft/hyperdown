@@ -10,8 +10,6 @@
   "dependencies": {
     "@lejeunerenard/autobase-manager": "github:lejeunerenard/autobase-manager#1.2.0",
     "autobase": "github:holepunchto/autobase#v1.0.0-alpha.9",
-    "random-access-memory": "^6.0.0",
-    "hypercore": "10.31.12",
     "hyperbee": "github:holepunchto/hyperbee#cas-prev-null",
     "corestore": "^6.15.13",
     "hyperswarm": "^4.7.13",
