@@ -1,6 +1,8 @@
 const hyperdown = async (options) => { // self-invoking function
   return new Promise(async (resolve) => {
     const hd = {};
+    const RAM = require('random-access-memory');
+    const Hypercore = require('hypercore');
     const Corestore = require('corestore');
     const Autobase = require('autobase');
     const AutobaseManager = (await import('@lejeunerenard/autobase-manager')).AutobaseManager;
@@ -84,25 +86,26 @@ const hyperdown = async (options) => { // self-invoking function
       base,
       (key, coreType, channel) => true, // function to filter core keys
       store.get.bind(store), // get(key) function to get a hypercore given a key
-      store.storage, // Storage for managing autobase keys
-      { id: options.folderName } // Options
+      new Hypercore(RAM) // Storage for managing autobase keys
     );
     await manager.ready();
 
-    hd.get = async function(key) {
-      await base.latest(base.inputs);
-      await base.view.update({ wait: true });
-      key = await base.view.get(key);
-      if (!key) return key;
-      key.value = key.value.toString();
-      if (['[', '{'].includes(key.value[0])) return JSON.parse(key.value);
-      return key.value;
-    };
-    hd.put = async function(key, value) {
-      const op = b4a.from(JSON.stringify({ type: 'put', key, value: JSON.stringify(value) }));
-      await base.append(op);
-      await base.view.update({ wait: true });
-      await base.latest(base.inputs);
+    const db = {
+      get: async function(key) {
+        await base.latest(base.inputs);
+        await base.view.update({ wait: true });
+        key = await base.view.get(key);
+        if (!key) return key;
+        key.value = key.value.toString();
+        if (['[', '{'].includes(key.value[0])) return JSON.parse(key.value);
+        return key.value;
+      },
+      put: async function(key, value) {
+        const op = b4a.from(JSON.stringify({ type: 'put', key, value: JSON.stringify(value) }));
+        await base.append(op);
+        await base.view.update({ wait: true });
+        await base.latest(base.inputs);
+      }
     };
 
     if (options.isServer) { // --------------------------------------- server
@@ -130,6 +133,12 @@ const hyperdown = async (options) => { // self-invoking function
           return e;
         }
       };
+      hd.updatePause = function (pause) {
+        const hyperdownId = id.set(+new Date());
+        for (const userPublicKey in clients) {
+          clients[userPublicKey].socket.write(JSON.stringify({ f: 'updatePause', hyperdownId, pause }));
+        }
+      };
       hd.addEvent = async function(userPublicKey, d) {
         await base.view.update({ wait: true });
         await base.latest(base.inputs);
@@ -140,12 +149,11 @@ const hyperdown = async (options) => { // self-invoking function
           userPublicKey = userPublicKey.toString('hex');
         }
         const hyperdownId = id.set(+new Date());
-        let ev = await hd.get(`${userPublicKey}-ev`) || {};
+        let ev = await db.get(`${userPublicKey}-ev`) || {};
         d.hyperdownId = hyperdownId;
         ev[hyperdownId] = d;
-        await hd.put(`${userPublicKey}-ev`, ev);
-        const ox = await hd.get(`${userPublicKey}-ox`);
-        if (ox && ox != 'x' && clients[userPublicKey]) {
+        await db.put(`${userPublicKey}-ev`, ev);
+        if (clients[userPublicKey]) {
           d.f = 'event';
           clients[userPublicKey].socket.write(JSON.stringify(d));
         }
@@ -165,7 +173,6 @@ const hyperdown = async (options) => { // self-invoking function
       server.on('connection', async function(socket) {
         socket.hexPublicKey = socket.remotePublicKey.toString('hex');
         clients[socket.hexPublicKey] = { socket, prevent: [] };
-        await hd.put(`${socket.hexPublicKey}-ox`, 'o');
         socket.on('data', async function(d) {
           const same = d.toString();
           if (!clients[socket.hexPublicKey].prevent.includes(same)) {
@@ -176,32 +183,40 @@ const hyperdown = async (options) => { // self-invoking function
               delete d.f;
               const $ev = base.view.createReadStream({ gte: `${socket.hexPublicKey}-ev`, lte: `${socket.hexPublicKey}-ev` });
               const $ex = base.view.createReadStream({ gte: `${socket.hexPublicKey}-ex`, lte: `${socket.hexPublicKey}-ex` });
-              let ev = await hd.get(`${socket.hexPublicKey}-ev`);
-              let ex = await hd.get(`${socket.hexPublicKey}-ex`) || d.ex; // should it be this way ?
+              let ev = await db.get(`${socket.hexPublicKey}-ev`);
+              let ex = await db.get(`${socket.hexPublicKey}-ex`) || {};
+              let ok = {};
+              for (const hyperdownId in d.ex) {
+                if (!ex[hyperdownId]) {
+                  console.log('ex added', hyperdownId); // todo: remove
+                  ex[hyperdownId] = d.ex[hyperdownId];
+                }
+                else {
+                  ok[hyperdownId] = ex[hyperdownId];
+                }
+              }
               let consumedEvents = [];
               for (const hyperdownId in ev) {
-                if (ex.includes(hyperdownId)) {
+                if (ex[hyperdownId]) {
                   consumedEvents.push(JSON.parse(JSON.stringify(ev[hyperdownId])));
                   delete ev[hyperdownId];
                 }
               }
-              await hd.put(`${socket.hexPublicKey}-ev`, ev);
-              await hd.put(`${socket.hexPublicKey}-ex`, []); // todo: make another callback so the server app says that they have delt with these
+              await db.put(`${socket.hexPublicKey}-ev`, ev);
+              await db.put(`${socket.hexPublicKey}-ex`, ok);
               hd.onClientConsumedEvents(socket.hexPublicKey, consumedEvents); // application can handle anything it needs to .... 
             }
           }
         });
         socket.on('close', async function() {
           delete clients[socket.hexPublicKey];
-          if ((await hd.get(`${socket.hexPublicKey}-ox`)) == 'o') {
-            await hd.put(`${socket.hexPublicKey}-ox`, 'x');
-          }
         });
       });
       await server.listen(keyPair);
       resolve(hd);
     }
     else { // ---------------------------------------------------------------- client
+      let once = true;
       hd.eventHandler = options.eventHandler;
       swarm = new Hyperswarm();
       const publicKey = keyPair.publicKey.toString('hex');
@@ -210,86 +225,113 @@ const hyperdown = async (options) => { // self-invoking function
         manager.attachStream(stream); // Attach manager
       });
       goodbye(async function() {
-        await hd.put(`${publicKey}-ox`, 'x');
         swarm.destroy();
       });
       await swarm.join(b4a.alloc(32).fill(options.folderName), { server: true, client: true });
       await swarm.flush();
       const node = new DHT();
-      const client = node.connect(options.serverPublicKey,{ keyPair });
-      client.on('open', async function() {
-        client.prevent = [];
-        client.on('data', async function(d) {
-          const same = d.toString();
-          if (!client.prevent.includes(same)) {
-            client.prevent.push(same);
-            client.prevent.splice(100);
-            d = JSON.parse(d);
-            if (d.f == 'event') {
-              delete d.f;
-              const hyperdownId = d.hyperdownId + '';
-              delete d.hyperdownId;
-              hd.eventHandler(hyperdownId, d, async function(id, bool) { // call back
-                if (id !== hyperdownId) {
-                  throw new Error(`Malformed hyperdownId for event. Got: '${id}', expected: '${hyperdownId}'`);
-                }
-                if (bool) { // true
-                  let ex = await hd.get(`${publicKey}-ex`) || [];
-                  ex.push(hyperdownId);
-                  await hd.put(`${publicKey}-ex`, ex);
-                  client.write(JSON.stringify({ f: 'consumedEvents', ex: (await hd.get(`${publicKey}-ex`)) }));
-                }
-              });
+      let client;
+      let payload = {};
+      const pauseMin = 20000;
+      let pause = pauseMin;
+      let trigger;
+      function connect() {
+        client = node.connect(options.serverPublicKey,{ keyPair });
+        client.on('error', async function() {
+          if (error.code === 'PEER_NOT_FOUND') {
+            once = true;
+          }
+          console.log('reconnecting ...');
+          connect();
+        });
+        client.on('close', async function() {
+          console.log('reconnecting ...');
+          connect();
+        });
+        client.on('open', async function() {
+          client.prevent = [];
+          client.on('data', async function(d) {
+            // todo: this happens again if reconnected (it should but it has no session memory core date:expire seen:true)
+            //
+            // todo: add a lock/unlock event ?
+            // - always client proccess multiple never singular
+            // - client detect server suddenly offline/online
+            // - impliment queues so that I can machine gun pelt it !!!!!!!!!!!!!!!
+            //
+            const same = d.toString();
+            if (!client.prevent.includes(same)) {
+              client.prevent.push(same);
+              client.prevent.splice(100);
+              d = JSON.parse(d);
+              if (d.f == 'updatePause') {
+                pause = d.pause;
+              }
+              else if (d.f == 'event') {
+                delete d.f;
+                payload[d.hyperdownId] = d;
+                console.log('payload', payload);
+                clearTimeout(trigger);
+                trigger = await setTimeout(async function() {
+                  if (pause != pauseMin) {
+                    pause = pauseMin; // reset after high yeild rapid fire
+                  }
+                  const bundle = JSON.parse(JSON.stringify(payload));
+                  payload = {};
+                  await processEvents(payload);
+                }, pause);
+              }
             }
+          });
+          if (once) {
+            once = false;
+            setTimeout(resolve, 0, hd);
+            processEvents();
           }
         });
-        await base.view.update({ wait: true });
-        await base.latest(base.inputs);
-        const $ox = base.view.createReadStream({ gte: `${publicKey}-ox`, lte: `${publicKey}-ox` }); // user online is o or x (o = online)
-        const $ev = base.view.createReadStream({ gte: `${publicKey}-ev`, lte: `${publicKey}-ev` }); // user events object {hyperdownId: event}
-        const $ex = base.view.createReadStream({ gte: `${publicKey}-ex`, lte: `${publicKey}-ex` }); // user consumed events [hyperdownId,hyperdownId,...]
-        await hd.put(`${publicKey}-ox`, 'o');
-        if (options.offline) {
-          console.log('im', publicKey);
-          for await (const entry of base.view.createReadStream()) {
-            console.log('b4', entry.key.toString(), entry.value.toString());
-          }
+      };
+      async function processEvents(many = {}) {
+        let ev, ex;
+        if (!many.length) {
+          await base.view.update({ wait: true });
+          await base.latest(base.inputs);
+          base.view.createReadStream({ gte: `${publicKey}-ev`, lte: `${publicKey}-ev` }); // user events object {hyperdownId: event}
+          ev = await db.get(`${publicKey}-ev`) || {};
         }
-        //setTimeout(async function() { // not happy with this !!!
-        const ev = await hd.get(`${publicKey}-ev`) || {};
+        else {
+          ev = many;
+        }
+        base.view.createReadStream({ gte: `${publicKey}-ex`, lte: `${publicKey}-ex` }); // user consumed events {hyperdownId: event}
+        ex = await db.get(`${publicKey}-ex`) || {};
+        for (const hyperdownId in ex) {
+          delete ev[hyperdownId]; // remove events we have seen
+        }
         let hyperdownId = Object.keys(ev);
         if (hyperdownId.length) {
           ;(async function next(s) {
             if (ev[hyperdownId[s]]) {
               delete ev[hyperdownId[s]].hyperdownId;
-              hd.eventHandler(hyperdownId[s], ev[hyperdownId[s]], async function(id, bool) { // callback result
+              await hd.eventHandler(hyperdownId[s], ev[hyperdownId[s]], async function(id, bool) { // callback result
                 if (id !== hyperdownId[s]) {
                   throw new Error(`Malformed hyperdownId for event. Got: '${id}', expected: '${hyperdownId[s]}'`);
                 }
                 if (bool) { // true
-                  let ex = await hd.get(`${publicKey}-ex`) || [];
-                  ex.push(hyperdownId[s]);
-                  await hd.put(`${publicKey}-ex`, ex);
+                  let ex = await db.get(`${publicKey}-ex`) || {};
+                  ex[hyperdownId[s]] = ev[hyperdownId[s]];
+                  await db.put(`${publicKey}-ex`, ex);
                 }
                 await next(s + 1);
               });
             }
             else { // end
               next = null;
-              client.write(JSON.stringify({ f: 'consumedEvents', ex: (await hd.get(`${publicKey}-ex`)) }));
+              client.write(JSON.stringify({ f: 'consumedEvents', ex: (await db.get(`${publicKey}-ex`)) }));
             }
           })(0);
         }
-        //}, 15000);
-        resolve(hd);
-      });
+      } // processEvent
+      connect();
     }
   });
 };
 
 module.exports = hyperdown;
-
-// todo: test in day time (seams really slow in the day and fast at night, hence the timout that is above on line 258)
-// - add dht bootstraps (faster?)
-// - add truncating
-// - ask about adding sub and how that would work with autobase apply
