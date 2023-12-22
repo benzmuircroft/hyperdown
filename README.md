@@ -89,7 +89,7 @@ npm install "github:benzmuircroft/hyperdown"
 })();
 ```
 
-## API SERVER
+## SERVER API
 
 ```js
 server.addEvent
@@ -105,7 +105,7 @@ server.onClientConsumedEvents(remotePublicKey, eventsArray) {
 });
 ```
 
-## API CLIENT
+## CLIENT API
 
 ```js
 // none
