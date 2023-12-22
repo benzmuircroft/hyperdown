@@ -88,3 +88,34 @@ npm install "github:benzmuircroft/hyperdown"
 
 })();
 ```
+
+## API SERVER
+
+```js
+server.addEvent
+server.updatePause
+server.reFace
+```
+### SERVER CALLBACK (Optional)
+
+```js
+server.onClientConsumedEvents(remotePublicKey, eventsArray) {
+  // do something ...
+  console.log('server: client used the event', remotePublicKey, eventsArray);
+});
+```
+
+## API CLIENT
+
+```js
+// none
+```
+
+### CLIENT CALLBACK (Mandatory)
+
+```js
+client.eventHandler(id, data, cb) {
+  // do something ...
+  cb(id, true);
+});
+```
