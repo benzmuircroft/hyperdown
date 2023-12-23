@@ -110,19 +110,18 @@ const hyperdown = async (options) => { // self-invoking function
     if (options.isServer) { // --------------------------------------- server
       hd.onClientConsumedEvents = options.onClientConsumedEvents;
       const id = {
-        to:
-          [
-            ['a', 'c', '1', 'l', 'D', 'M', 'X'],  // 0
-            ['d', 'f', '3', 'C', 'L', 'N'],       // 1
-            ['g', 'h', 'i', '7', 'V', 'H'],       // 2
-            ['j', 't', 'b', 'z', 'R', 'O'],       // 3
-            ['m', 'n', 'o', 'E', 'I', 'P'],       // 4
-            ['p', 'q', 'r', '4', 'G', 'K'],       // 5
-            ['s', 'u', 'k', '9', 'F', 'Z', 'J'],  // 6
-            ['v', 'w', 'x', '6', 'T', 'W'],       // 7
-            ['y', '2', '8', 'B', 'Y', 'Q'],       // 8
-            ['0', '5', 'e', 'A', 'U', 'S']        // 9
-          ]
+        to: [
+          ['a', 'c', '1', 'l', 'D', 'M', 'X'],  // 0
+          ['d', 'f', '3', 'C', 'L', 'N'],       // 1
+          ['g', 'h', 'i', '7', 'V', 'H'],       // 2
+          ['j', 't', 'b', 'z', 'R', 'O'],       // 3
+          ['m', 'n', 'o', 'E', 'I', 'P'],       // 4
+          ['p', 'q', 'r', '4', 'G', 'K'],       // 5
+          ['s', 'u', 'k', '9', 'F', 'Z', 'J'],  // 6
+          ['v', 'w', 'x', '6', 'T', 'W'],       // 7
+          ['y', '2', '8', 'B', 'Y', 'Q'],       // 8
+          ['0', '5', 'e', 'A', 'U', 'S']        // 9
+        ]
         , set: function (t) { // randomly encrypt a timestamp
           let e = '';
           t = '' + t;
@@ -130,6 +129,16 @@ const hyperdown = async (options) => { // self-invoking function
             e += this.to[Number(element)][Math.floor(Math.random() * this.to[Number(element)].length)]
           }
           return e;
+        }
+        , get: function (c) { // not used
+          let d = '';
+          c = '' + c;
+          for (const element of c) {
+            for (let x = 0; x < this.to.length; x += 1) {
+              if (this.to[x].indexOf(element) > -1) { d += x; break; }
+            }
+          }
+          return Number(d);
         }
       };
       hd.updatePause = function (pause) {
@@ -237,8 +246,8 @@ const hyperdown = async (options) => { // self-invoking function
       function connect() {
         // todo: slow down or wait via protomux and the servers known peers
         client = node.connect(options.serverPublicKey,{ keyPair });
-        client.on('error', async function() {
-          if (error.code === 'PEER_NOT_FOUND') {
+        client.on('error', async function(e) {
+          if (e.code === 'PEER_NOT_FOUND') {
             once = true;
           }
           client = undefined;
@@ -264,7 +273,7 @@ const hyperdown = async (options) => { // self-invoking function
               else if (d.f == 'event') {
                 delete d.f;
                 payload[d.hyperdownId] = d; // queue
-                console.log('payload', payload);
+                //console.log('payload', payload);
                 clearTimeout(trigger);
                 trigger = await setTimeout(async function() {
                   if (pause != pauseMin) {
