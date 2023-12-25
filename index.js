@@ -52,7 +52,7 @@ const hyperdown = async (options) => { // self-invoking function
     }
 
 
-    const hd = require('tinybee')(folder);
+    const hd = await require('tinybee')(folder);
   
 
     
