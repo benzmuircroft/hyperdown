@@ -3,7 +3,7 @@ A user event memory for server and clients. Online users will receive events and
 
 ## 🎯 Roadmap:
 
-✅ tests work (both serve and/or user can go offline or be offline then come back later or be here now)
+✅ tests work (both server and/or user can go offline or be offline then come back later or be here now)
 
 🔳 impliment queues for both addEvent and consumedEvents ?
 
