@@ -14,7 +14,7 @@
 
 
 
-  const server = await require('hyperdown/evs')({
+  const server = await require('hyperdown')({
     uniqueKeyPair: kp0,
     folderName: 'topic',
     testFolder: 'server', // only needed because we are testing in one script
@@ -36,7 +36,7 @@
     publicKey: b4a.from('09f9cb2e6097bab4936696c7fb2e80c52ecc7e7a0dfe67274d93198e785c1558', 'hex')
   }).get();
 
-  const onlineClient = await require('hyperdown/evs')({
+  const onlineClient = await require('hyperdown')({
     serverPublicKey: kp0.publicKey,
     uniqueKeyPair: kp1,
     folderName: 'topic',
@@ -61,7 +61,7 @@
 
   await server.addEvent(kp2.publicKey, { prize: -500, game: 'boxing', note: 'user2 is offline' }); // give a offline client an event
 
-  const offlineClient = await require('hyperdown/evs')({ // they come back later ...
+  const offlineClient = await require('hyperdown')({ // they come back later ...
     serverPublicKey: kp0.publicKey,
     uniqueKeyPair: kp2,
     folderName: 'topic',
