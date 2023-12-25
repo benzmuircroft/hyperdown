@@ -4,6 +4,7 @@ A user event memory for server and clients. Online users will receive events and
 todo: 
 - impliment queues for both addEvent and consumedEvents ?
 - could I queue dealing with events and sending results ?
+- each completed action pushes the last out and it can scale with more users ?
 
 ## Installation
 ```
