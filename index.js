@@ -1,15 +1,13 @@
 const hyperdown = async (options) => { // self-invoking function
   return new Promise(async (resolve) => {
-    const hd = {};
+    
     const Corestore = require('corestore');
-    const Autobase = require('autobase');
-    const AutobaseManager = (await import('@lejeunerenard/autobase-manager')).AutobaseManager;
     const Hyperbee = require('hyperbee');
     const Hyperswarm = require('hyperswarm');
-    const DHT = require('hyperdht');
     const Keychain = (await import('keypear')).default;
     const b4a = require('b4a');
     const goodbye = (await import('graceful-goodbye')).default;
+    
 
     let base, swarm, keyPair;
 
@@ -52,61 +50,12 @@ const hyperdown = async (options) => { // self-invoking function
     if (options.testFolder) {
       folder += `/${options.testFolder}`;
     }
+
+
+    const hd = require('tinybee')(folder);
+  
+
     
-    const store = new Corestore(folder);
-    await store.ready();
-    const input = store.get({ name: 'input', sparse: false });
-    const output = store.get({ name: 'output', sparse: false });
-    await input.ready();
-    await output.ready();
-    base = new Autobase({
-      inputs: [input],
-      localInput: input,
-      localOutput: output
-    });
-    base.start({
-      unwrap: true,
-      apply: async function(bee, batch) {
-        const b = bee.batch({ update: false });
-        for (const node of batch) {
-          const op = JSON.parse(node.value.toString());
-          if (op.type === 'del') await b.del(op.key); // not used
-          else if (op.type === 'put') await b.put(op.key, op.value.toString());
-        }
-        await b.flush();
-      },
-      view: core => new Hyperbee(core.unwrap(), {
-        extension: false
-      })
-    });
-    await base.ready();
-    const manager = new AutobaseManager(
-      base,
-      (key, coreType, channel) => true, // function to filter core keys
-      store.get.bind(store), // get(key) function to get a hypercore given a key
-      store.storage, // Storage for managing autobase keys
-      { id: options.folderName } // Options
-    );
-    await manager.ready();
-
-    const db = {
-      get: async function(key) {
-        await base.latest(base.inputs);
-        await base.view.update({ wait: true });
-        key = await base.view.get(key);
-        if (!key) return key;
-        key.value = key.value.toString();
-        if (['[', '{'].includes(key.value[0])) return JSON.parse(key.value);
-        return key.value;
-      },
-      put: async function(key, value) {
-        const op = b4a.from(JSON.stringify({ type: 'put', key, value: JSON.stringify(value) }));
-        await base.append(op);
-        await base.view.update({ wait: true });
-        await base.latest(base.inputs);
-      }
-    };
-
     if (options.isServer) { // --------------------------------------- server
       hd.onClientConsumedEvents = options.onClientConsumedEvents;
       const id = {
@@ -148,8 +97,6 @@ const hyperdown = async (options) => { // self-invoking function
         }
       };
       hd.addEvent = async function(userPublicKey, d) {
-        await base.view.update({ wait: true });
-        await base.latest(base.inputs);
         if (typeof d !== 'object') {
           throw new Error('data needs to be an object');
         }
@@ -157,31 +104,25 @@ const hyperdown = async (options) => { // self-invoking function
           userPublicKey = userPublicKey.toString('hex');
         }
         const hyperdownId = id.set(+new Date());
-        let ev = await db.get(`${userPublicKey}-ev`) || {};
         d.hyperdownId = hyperdownId;
-        ev[hyperdownId] = d;
-        await db.put(`${userPublicKey}-ev`, ev);
+        await hd.put(hyperdownId, d, userPublicKey); // sub put event
         if (clients[userPublicKey]) {
           d.f = 'event';
           clients[userPublicKey].socket.write(JSON.stringify(d));
         }
         return hyperdownId;
       };
-      swarm = new Hyperswarm();
+      swarm = new Hyperswarm({ keyPair });
       const clients = {};
-      swarm.on('connection', function(socket) {
-        const stream = store.replicate(socket);
-        manager.attachStream(stream); // Attach manager
-      });
-      goodbye(() => swarm.destroy());
-      await swarm.join(b4a.alloc(32).fill(options.folderName), { server: true, client: true });
-      await swarm.flush();
-      const node = new DHT();
-      const server = node.createServer();
-      server.on('connection', async function(socket) {
+      swarm.on('connection', async function(socket) {
+        // todo accept an index so we can know the rpk is the wallet address
         socket.hexPublicKey = socket.remotePublicKey.toString('hex');
-        clients[socket.hexPublicKey] = { socket, prevent: [] };
-        socket.on('data', async function(d) {
+        clients[socket.hexPublicKey] = {
+          socket,
+          prevent: [],
+          caughtUp: false
+        };
+        clients[socket.hexPublicKey].socket.on('data', async function (d) {
           const same = d.toString();
           if (!clients[socket.hexPublicKey].prevent.includes(same)) {
             clients[socket.hexPublicKey].prevent.push(same);
@@ -189,79 +130,106 @@ const hyperdown = async (options) => { // self-invoking function
             d = JSON.parse(d);
             if (d.f == 'consumedEvents') { // a bulk of events
               delete d.f;
-              base.view.createReadStream({ gte: `${socket.hexPublicKey}-ev`, lte: `${socket.hexPublicKey}-ev` });
-              base.view.createReadStream({ gte: `${socket.hexPublicKey}-ex`, lte: `${socket.hexPublicKey}-ex` });
-              let ev = await db.get(`${socket.hexPublicKey}-ev`);
-              let ex = await db.get(`${socket.hexPublicKey}-ex`) || {};
-              let ok = {};
-              for (const hyperdownId in d.ex) {
-                if (!ex[hyperdownId]) {
-                  console.log('ex added', hyperdownId); // todo: remove
-                  ex[hyperdownId] = d.ex[hyperdownId];
-                }
-                else {
-                  ok[hyperdownId] = ex[hyperdownId];
-                }
+              let evs = await hd.get(null, socket.hexPublicKey); // sub get all
+              let hyperdownId = Object.keys(d.exs);
+              if (!clients[socket.hexPublicKey].caughtUp) {
+                clients[socket.hexPublicKey].caughtUp = true;
+                const prevEvs = Object.fromEntries(Object.entries(evs).filter(([key]) => !hyperdownId.includes(key)));
+                clients[socket.hexPublicKey].socket.write(JSON.stringify({ f: 'event', evs: prevEvs }));
               }
               let consumedEvents = [];
-              for (const hyperdownId in ev) {
-                if (ex[hyperdownId]) {
-                  consumedEvents.push(JSON.parse(JSON.stringify(ev[hyperdownId])));
-                  delete ev[hyperdownId];
+              ;(async function next(s) {
+                if (hyperdownId[s]) {
+                  if (evs[hyperdownId[s]]) { // we still have to deal with this ...
+                    hd.onClientConsumedEvents(socket.hexPublicKey, d.exs[hyperdownId[s]], async function(success) { // application can handle anything it needs to ....
+                      if (success) {
+                        consumedEvents.push(hyperdownId[s]);
+                        hd.del(hyperdownId[s], socket.hexPublicKey); // sub del key
+                      }
+                      next(s + 1);
+                    });
+                  }
+                  else {
+                    consumedEvents.push(hyperdownId[s]);
+                    next(s + 1);
+                  }
                 }
-              }
-              await db.put(`${socket.hexPublicKey}-ev`, ev);
-              await db.put(`${socket.hexPublicKey}-ex`, ok);
-              hd.onClientConsumedEvents(socket.hexPublicKey, consumedEvents); // application can handle anything it needs to .... 
+                else { // end
+                  if (clients[socket.hexPublicKey]) {
+                    clients[socket.hexPublicKey].socket.write(JSON.stringify({ f: 'done', exs: consumedEvents }));
+                  }
+                }
+              })(0);
             }
           }
         });
-        socket.on('close', async function() {
+        socket.on('error', function (err) {});
+        socket.on('close', function () {
           delete clients[socket.hexPublicKey];
         });
       });
-      await server.listen(keyPair);
+      goodbye(() => swarm.destroy());
+      await swarm.join(b4a.alloc(32).fill(options.folderName), { server: true, client: true });
+      await swarm.flush();
+      hd.leave = function() {
+        console.log('server offline');
+        swarm.destroy();
+      };
       resolve(hd);
     }
     else { // ---------------------------------------------------------------- client
-      let once = true;
       hd.eventHandler = options.eventHandler;
-      swarm = new Hyperswarm();
-      const publicKey = keyPair.publicKey.toString('hex');
-      swarm.on('connection', async function(socket) {
-        const stream = store.replicate(socket);
-        manager.attachStream(stream); // Attach manager
-      });
-      goodbye(async function() {
-        swarm.destroy();
-      });
-      await swarm.join(b4a.alloc(32).fill(options.folderName), { server: true, client: true });
-      await swarm.flush();
-      const node = new DHT();
-      let client;
+      let once = true;
+      let client = {
+        prevent: [],
+        caughtUp: false
+      };
       let payload = {};
       const pauseMin = 20000;
       let pause = pauseMin;
       let trigger;
-      function connect() {
-        // todo: slow down or wait via protomux and the servers known peers
-        client = node.connect(options.serverPublicKey,{ keyPair });
-        client.on('error', async function(e) {
-          if (e.code === 'PEER_NOT_FOUND') {
-            once = true;
-          }
-          client = undefined;
-          console.log('reconnecting ...');
-          connect();
-        });
-        client.on('close', async function() {
-          console.log('reconnecting ...');
-          client = undefined;
-          connect();
-        });
-        client.on('open', async function() {
-          client.prevent = [];
-          client.on('data', async function(d) {
+      async function processEvents(ev = {}) {
+        let ex = await hd.get(); // user consumed events {hyperdownId: event}
+        for (const hyperdownId in ex) {
+          delete ev[hyperdownId]; // remove events we have seen
+        }
+        let hyperdownId = Object.keys(ev);
+        let consumedEvents = {};
+        if (hyperdownId.length) {
+          ;(async function next(s) {
+            if (ev[hyperdownId[s]]) {
+              delete ev[hyperdownId[s]].hyperdownId;
+              await hd.eventHandler(hyperdownId[s], ev[hyperdownId[s]], async function(id, bool) { // callback result
+                if (id !== hyperdownId[s]) {
+                  throw new Error(`Malformed hyperdownId for event. Got: '${id}', expected: '${hyperdownId[s]}'`);
+                }
+                if (bool) { // true
+                  await hd.put(hyperdownId[s], ev[hyperdownId[s]]);
+                  consumedEvents[hyperdownId[s]] = ev[hyperdownId[s]];
+                }
+                await next(s + 1);
+              });
+            }
+            else { // end
+              next = null;
+              if (client.socket) {
+                if (!client.caughtUp) {
+                  client.caughtUp = true;
+                  consumedEvents = await hd.get();
+                }
+                client.socket.write(JSON.stringify({ f: 'consumedEvents', exs: consumedEvents }));
+              }
+            }
+          })(0);
+        }
+
+      } // processEvent
+      swarm = new Hyperswarm({ keyPair });
+      const publicKey = keyPair.publicKey.toString('hex');
+      swarm.on('connection', async function(socket) {
+        if (options.serverPublicKey.toString('hex') == socket.remotePublicKey.toString('hex')) {
+          client.socket = socket;
+          socket.on('data', async function(d) {
             const same = d.toString();
             if (!client.prevent.includes(same)) {
               client.prevent.push(same);
@@ -272,8 +240,12 @@ const hyperdown = async (options) => { // self-invoking function
               }
               else if (d.f == 'event') {
                 delete d.f;
-                payload[d.hyperdownId] = d; // queue
-                //console.log('payload', payload);
+                if (d.evs) {
+                  payload = { ...payload, ...d.evs };
+                }
+                else {
+                  payload[d.hyperdownId] = d; // queue
+                }
                 clearTimeout(trigger);
                 trigger = await setTimeout(async function() {
                   if (pause != pauseMin) {
@@ -281,60 +253,35 @@ const hyperdown = async (options) => { // self-invoking function
                   }
                   const bundle = JSON.parse(JSON.stringify(payload));
                   payload = {};
-                  await processEvents(payload);
+                  await processEvents(bundle);
                 }, pause);
+              }
+              else if (d.f == 'done') { // server said you no longer need these ex events
+                for (const hyperdownId of d.exs) {
+                  hd.del(hyperdownId);
+                }
               }
             }
           });
+          const ex = await hd.get();
+          if (ex) {
+            client.socket.write(JSON.stringify({ f: 'consumedEvents', exs: (await hd.get()) })); // first contact
+          }
           if (once) {
             once = false;
-            setTimeout(resolve, 0, hd);
-            // no, ask / or get the pause
-            processEvents();
+            resolve(hd);
           }
-        });
-      };
-      async function processEvents(many = {}) {
-        let ev, ex;
-        await base.view.update({ wait: true });
-        await base.latest(base.inputs);
-        if (!many.length) {
-          base.view.createReadStream({ gte: `${publicKey}-ev`, lte: `${publicKey}-ev` }); // user events object {hyperdownId: event}
-          ev = await db.get(`${publicKey}-ev`) || {};
         }
-        else {
-          ev = many;
-        }
-        base.view.createReadStream({ gte: `${publicKey}-ex`, lte: `${publicKey}-ex` }); // user consumed events {hyperdownId: event}
-        ex = await db.get(`${publicKey}-ex`) || {};
-        for (const hyperdownId in ex) {
-          delete ev[hyperdownId]; // remove events we have seen
-        }
-        let hyperdownId = Object.keys(ev);
-        if (hyperdownId.length) {
-          ;(async function next(s) {
-            if (ev[hyperdownId[s]]) {
-              delete ev[hyperdownId[s]].hyperdownId;
-              await hd.eventHandler(hyperdownId[s], ev[hyperdownId[s]], async function(id, bool) { // callback result
-                if (id !== hyperdownId[s]) {
-                  throw new Error(`Malformed hyperdownId for event. Got: '${id}', expected: '${hyperdownId[s]}'`);
-                }
-                if (bool) { // true
-                  let ex = await db.get(`${publicKey}-ex`) || {};
-                  ex[hyperdownId[s]] = ev[hyperdownId[s]];
-                  await db.put(`${publicKey}-ex`, ex);
-                }
-                await next(s + 1);
-              });
-            }
-            else { // end
-              next = null;
-              if (client) client.write(JSON.stringify({ f: 'consumedEvents', ex: (await db.get(`${publicKey}-ex`)) }));
-            }
-          })(0);
-        }
-      } // processEvent
-      connect();
+        socket.on('error', function (err) {});
+        socket.on('close', function () {
+          if (options.serverPublicKey.toString('hex') == socket.remotePublicKey.toString('hex')) {
+            client.socket = null;
+          }
+        })
+      });
+      goodbye(() => swarm.destroy());
+      await swarm.join(b4a.alloc(32).fill(options.folderName), { server: true, client: true });
+      await swarm.flush();
     }
   });
 };
