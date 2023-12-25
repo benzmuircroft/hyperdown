@@ -8,7 +8,7 @@ npm install "github:benzmuircroft/hyperdown"
 
 ## 🎯 Roadmap:
 
-✅ tests work (both server and/or user can go offline or be offline then come back later or be here now)
+✅ events always fully work! (both server and/or user can go offline or be offline then come back later or be here now)
 
 🔳 impliment queues for both addEvent and consumedEvents ?
 
