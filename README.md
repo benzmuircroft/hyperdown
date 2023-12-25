@@ -8,13 +8,13 @@ npm install "github:benzmuircroft/hyperdown"
 
 ## 🎯 Roadmap:
 
-✅ events always fully work! (both server/user can go offline or be offline then come back later or be here now)
+✅ Events always fully work! (both server/user can go offline or be offline then come back later or be here now)
 
-🔳 impliment queues for both addEvent and consumedEvents ?
+🔳 Impliment queues for both addEvent and consumedEvents ?
 
-🔳 could I queue dealing with events and sending results ?
+🔳 Could I queue dealing with events and sending results ?
 
-🔳 each completed action pushes the last out and it can scale with more users ?
+🔳 Each completed action pushes the last out and it can scale with more users ?
 
 ...
 
