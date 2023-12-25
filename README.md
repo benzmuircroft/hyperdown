@@ -11,7 +11,7 @@ A user event memory for server and clients. Online users will receive events and
 
 🔳 each completed action pushes the last out and it can scale with more users ?
 
-
+...
 
 ## Installation
 ```
