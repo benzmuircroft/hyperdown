@@ -15,6 +15,7 @@ npm install "github:benzmuircroft/hyperdown"
   folderName:             'is storage and the swarm topic',
   testFolder:             'If testing server and client(s) in a single script this will move the storage to an inner folder of folderName',
   isServer:               'is a bool',
+  // q:                   'a tinybee that enforces queuing many users events and has memory so it can resume the queue ...' 
   onClientConsumedEvents: 'required for server. is a function (see sever example)',
   eventHandler:           'required for clients. is a function (see client example)'
 }
