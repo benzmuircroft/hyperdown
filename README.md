@@ -1,10 +1,11 @@
 # 🕳🥊 Hyperdown
 A user event memory for server and clients. Online users will receive events and handle them normally. Offline users will have their events stored and replicated for later retrieval and handling. If the server goes down all the clients will still store and replicate the events.
 
-todo: 
-- impliment queues for both addEvent and consumedEvents ?
-- could I queue dealing with events and sending results ?
-- each completed action pushes the last out and it can scale with more users ?
+## 🎯 Roadmap: 
+✅ tests work (both ser or user can go offline or be offline then come back later or be here now)
+🔳 impliment queues for both addEvent and consumedEvents ?
+🔳 could I queue dealing with events and sending results ?
+🔳 each completed action pushes the last out and it can scale with more users ?
 
 ## Installation
 ```
