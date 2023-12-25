@@ -8,10 +8,7 @@
     "url": "https://github.com/benzmuircroft/hyperdown"
   },
   "dependencies": {
-    "@lejeunerenard/autobase-manager": "github:lejeunerenard/autobase-manager#1.2.0",
-    "autobase": "github:holepunchto/autobase#v1.0.0-alpha.9",
-    "hyperbee": "github:holepunchto/hyperbee#cas-prev-null",
-    "corestore": "^6.15.13",
+    "tinybee": "github:benzmuircroft/tinybee",
     "hyperswarm": "^4.7.13",
     "keypear": "^1.2.0",
     "b4a": "^1.6.0",
@@ -25,8 +22,7 @@
     "hypercore",
     "corestore",
     "hyperswarm",
-    "database",
-    "autobase"
+    "database"
   ],
   "author": "Benz Muircroft",
   "license": "MIT"
