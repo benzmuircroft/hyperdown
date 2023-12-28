@@ -10,9 +10,9 @@ npm install "github:benzmuircroft/hyperdown"
 
 ✅ Events always fully work! (both server/user can go offline or be offline then come back later or be here now)
 
-✅ Impliment queues for both addEvent
+✅ Impliment queues for addEvent
 
-🔳 Impliment queues for both consumedEvents ?
+🔳 Impliment queues for consumedEvents ?
 
 🔳 Could I queue dealing with events and sending results ?
 
