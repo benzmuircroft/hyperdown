@@ -189,7 +189,7 @@ const hyperdown = async (options) => { // self-invoking function
       let pause = pauseMin;
       let trigger;
       async function processEvents(ev = {}) {
-        let ex = await hd.get(); // user consumed events {hyperdownId: event}
+        let ex = await hd.get(); // user consumed events { hyperdownId: event }
         for (const hyperdownId in ex) {
           delete ev[hyperdownId]; // remove events we have seen
         }
