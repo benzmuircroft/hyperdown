@@ -1,8 +1,6 @@
 const hyperdown = async (options) => { // self-invoking function
   return new Promise(async (resolve) => {
-    
-    const Corestore = require('corestore');
-    const Hyperbee = require('hyperbee');
+  
     const Hyperswarm = require('hyperswarm');
     const Keychain = (await import('keypear')).default;
     const b4a = require('b4a');
