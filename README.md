@@ -62,7 +62,7 @@ npm install "github:benzmuircroft/hyperdown"
     }
   });
   
-  // an offline user
+  // an online user
 
   const kp1 = new Keychain({
     scalar: b4a.from('684e14316d8f379829ee5d1b883dffd2cf123f2987b8658353ae740ed8758565', 'hex'),
